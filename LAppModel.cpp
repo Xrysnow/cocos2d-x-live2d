@@ -19,20 +19,18 @@
 #include "Motion/CubismMotionQueueEntry.hpp"
 
 //cocos2d
-//#include "SimpleAudioEngine.h"
 #include "base/CCDirector.h"
 #include "renderer/CCTexture2D.h"
 #include "renderer/CCTextureCache.h"
-#include "Audio/AudioEngine.h"
 
-//using namespace CocosDenshion;
 using namespace std;
 using namespace Csm;
 using namespace Csm::Constant;
 using namespace Csm::DefaultParameterId;
 using namespace LAppDefine;
+using namespace cocos2d;
 
-USING_NS_CC;
+//TODO: audio
 
 namespace {
 csmByte* CreateBuffer(const csmChar* path, csmSizeInt* size)
@@ -293,7 +291,6 @@ void LAppModel::PreloadMotionGroup(const csmChar* group)
             path_ = _modelHomeDir + path_;
 
             //SimpleAudioEngine::getInstance()->preloadEffect(path.GetRawString());
-			XAudioEngine::preload(path_.GetRawString());
         }
     }
 }
@@ -310,7 +307,6 @@ void LAppModel::ReleaseMotionGroup(const csmChar* group) const
             path = _modelHomeDir + path;
 
             //SimpleAudioEngine::getInstance()->unloadEffect(path.GetRawString());
-			XAudioEngine::preload(path.GetRawString());
 		}
     }
 }
@@ -484,7 +480,6 @@ CubismMotionQueueEntryHandle LAppModel::StartMotion(const csmChar* group, csmInt
         csmString path = voice;
         path = _modelHomeDir + path;
         //SimpleAudioEngine::getInstance()->playEffect(path.GetRawString());
-		XAudioEngine::preload(path.GetRawString());
 	}
 
     if (_debugMode)LAppPal::PrintLog("[APP]start motion: [%s_%d]", group, no);
