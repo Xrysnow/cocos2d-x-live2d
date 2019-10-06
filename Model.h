@@ -44,9 +44,9 @@ namespace l2d
 		void setDragging(float x, float y);
 		void setAcceleration(float x, float y, float z);
 
-		void setOnHitCallback(std::function<void(float, float)> cb) { onHitCallback = cb; }
+		void setOnHitCallback(const std::function<void(float, float)>& cb) { onHitCallback = cb; }
 		void setOnHitCallback(int handler);
-		void setOnDraggingCallback(std::function<void(float, float)> cb) { onDraggingCallback = cb; }
+		void setOnDraggingCallback(const std::function<void(float, float)>& cb) { onDraggingCallback = cb; }
 		void setOnDraggingCallback(int handler);
 
 		void setDebugRectEnable(bool b) { enableDebugRect = b; }
@@ -64,12 +64,26 @@ namespace l2d
 		bool hitTest(const cocos2d::Vec2& pt, const cocos2d::Camera* camera, cocos2d::Vec3* p) const override;
 	public:
 
-		float getParameterMaximumValue(const char* name) const;
-		float getParameterMinimumValue(const char* name) const;
-		float getParameterValue(const char* name) const;
-		void  setParameterValue(const char* name, float value, float weight = 1.0f);
-		void  addParameterValue(const char* name, float value, float weight = 1.0f);
-		void  multiplyParameterValue(const char* name, float value, float weight = 1.0f);
+		int32_t getParameterCount() const;
+		std::vector<std::string> getParameterNames() const;
+		float getParameterMaximumValue(const std::string& name) const;
+		float getParameterMinimumValue(const std::string& name) const;
+		float getParameterDefaultValue(const std::string& name) const;
+		float getParameterValue(const std::string& name) const;
+		void  setParameterValue(const std::string& name, float value, float weight = 1.0f);
+		void  addParameterValue(const std::string& name, float value, float weight = 1.0f);
+		void  multiplyParameterValue(const std::string& name, float value, float weight = 1.0f);
+
+		int32_t getPartCount() const;
+		std::vector<std::string> getPartNames() const;
+		float getPartOpacity(const std::string& name) const;
+		void setPartOpacity(const std::string& name, float opacity);
+
+		int32_t getDrawableCount() const;
+		std::vector<std::string> getDrawableNames() const;
+		float getDrawableOpacity(const std::string& name) const;
+		int32_t getDrawableCulling(const std::string& name) const;
+		int32_t getDrawableBlendMode(const std::string& name) const;
 
 		cocos2d::Vec2 getGravity() const;
 		void setGravity(const cocos2d::Vec2& gravity);

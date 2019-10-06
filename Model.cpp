@@ -3,11 +3,17 @@
 #include "LogSystem.h"
 #include "XLive2D.h"
 #include "Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp"
+#include "Id/CubismIdManager.hpp"
 
 using namespace std;
 using namespace l2d;
 using namespace cocos2d;
 using namespace Live2D::Cubism::Framework;
+
+CubismIdHandle csm_id(const std::string& str)
+{
+	return CubismFramework::GetIdManager()->GetId(str.c_str());
+}
 
 Model::Model()
 {
@@ -50,16 +56,16 @@ bool Model::_init(const std::string& dir, const std::string& fileName)
 	const auto end = d[d.size() - 1];
 	if (end != '/' && end != '\\')
 		d += "/";
+	if (!model->LoadAssets(d.c_str(), fileName.c_str()))
+	{
+		LERROR("cannot load model '%s' at [%s]", fileName.c_str(), d.c_str());
+		return false;
+	}
 	_recreatListener = EventListenerCustom::create(EVENT_RENDERER_RECREATED, [&](EventCustom*)
 	{
 		model->ReloadRenderer();
 	});
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(_recreatListener, 2);
-	auto ret = model->LoadAssets(d.c_str(), fileName.c_str());
-	if (!ret)
-	{
-		LERROR("cannot load model '%s' at [%s]", fileName.c_str(), d.c_str());
-	}
 	model->GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->IsPremultipliedAlpha(false);
 
 	const auto window = Director::getInstance()->getWinSize();
@@ -77,7 +83,7 @@ bool Model::_init(const std::string& dir, const std::string& fileName)
 	setIgnoreAnchorPointForPosition(true);
 	setAnchorPoint(Vec2::ANCHOR_MIDDLE);
 	setContentSize(getCanvasRect().size);
-	return ret;
+	return true;
 }
 
 bool Model::startMotion(const char* group, int32_t no, int32_t priority)
@@ -317,43 +323,116 @@ bool Model::hitTest(const cocos2d::Vec2& pt, const cocos2d::Camera* camera, coco
 	return isScreenPointInRect(pt, camera, getWorldToNodeTransform(), rect, nullptr);
 }
 
-float Model::getParameterMaximumValue(const char* name) const
+int32_t Model::getParameterCount() const
 {
-	auto id = CubismId(name);
+	return model->GetModel()->GetParameterCount();
+}
+
+std::vector<std::string> Model::getParameterNames() const
+{
+	const auto m = model->GetModel()->GetModel();
+	const auto parameterIds = csmGetParameterIds(m);
+	std::vector<std::string> ret;
+	for (auto i = 0; i < csmGetParameterCount(m); ++i)
+		ret.emplace_back(parameterIds[i]);
+	return ret;
+}
+
+float Model::getParameterMaximumValue(const std::string& name) const
+{
 	auto m = model->GetModel();
-	return m->GetParameterMaximumValue(m->GetParameterIndex(&id));
+	return m->GetParameterMaximumValue(m->GetParameterIndex(csm_id(name)));
 }
 
-float Model::getParameterMinimumValue(const char* name) const
+float Model::getParameterMinimumValue(const std::string& name) const
 {
-	auto id = CubismId(name);
 	auto m = model->GetModel();
-	return m->GetParameterMinimumValue(m->GetParameterIndex(&id));
+	return m->GetParameterMinimumValue(m->GetParameterIndex(csm_id(name)));
 }
 
-float Model::getParameterValue(const char* name) const
+float Model::getParameterDefaultValue(const std::string& name) const
 {
-	auto id = CubismId(name);
 	auto m = model->GetModel();
-	return m->GetParameterValue(m->GetParameterIndex(&id));
+	return m->GetParameterDefaultValue(m->GetParameterIndex(csm_id(name)));
 }
 
-void Model::setParameterValue(const char* name, float value, float weight)
+float Model::getParameterValue(const std::string& name) const
 {
-	auto id = CubismId(name);
-	model->GetModel()->SetParameterValue(&id, value, weight);
+	auto m = model->GetModel();
+	return m->GetParameterValue(m->GetParameterIndex(csm_id(name)));
 }
 
-void Model::addParameterValue(const char* name, float value, float weight)
+void Model::setParameterValue(const std::string& name, float value, float weight)
 {
-	auto id = CubismId(name);
-	model->GetModel()->AddParameterValue(&id, value, weight);
+	model->GetModel()->SetParameterValue(csm_id(name), value, weight);
 }
 
-void Model::multiplyParameterValue(const char* name, float value, float weight)
+void Model::addParameterValue(const std::string& name, float value, float weight)
 {
-	auto id = CubismId(name);
-	model->GetModel()->MultiplyParameterValue(&id, value, weight);
+	model->GetModel()->AddParameterValue(csm_id(name), value, weight);
+}
+
+void Model::multiplyParameterValue(const std::string& name, float value, float weight)
+{
+	model->GetModel()->MultiplyParameterValue(csm_id(name), value, weight);
+}
+
+int32_t Model::getPartCount() const
+{
+	return model->GetModel()->GetPartCount();
+}
+
+std::vector<std::string> Model::getPartNames() const
+{
+	const auto m = model->GetModel()->GetModel();
+	const auto partIds = csmGetPartIds(m);
+	std::vector<std::string> ret;
+	for (auto i = 0; i < csmGetPartCount(m); ++i)
+		ret.emplace_back(partIds[i]);
+	return ret;
+}
+
+float Model::getPartOpacity(const std::string& name) const
+{
+	return model->GetModel()->GetPartOpacity(csm_id(name));
+}
+
+void Model::setPartOpacity(const std::string& name, float opacity)
+{
+	model->GetModel()->SetPartOpacity(csm_id(name), opacity);
+}
+
+int32_t Model::getDrawableCount() const
+{
+	return model->GetModel()->GetDrawableCount();
+}
+
+std::vector<std::string> Model::getDrawableNames() const
+{
+	const auto m = model->GetModel()->GetModel();
+	const auto drawableIds = csmGetDrawableIds(m);
+	std::vector<std::string> ret;
+	for (auto i = 0; i < csmGetDrawableCount(m); ++i)
+		ret.emplace_back(drawableIds[i]);
+	return ret;
+}
+
+float Model::getDrawableOpacity(const std::string& name) const
+{
+	auto m = model->GetModel();
+	return m->GetDrawableOpacity(m->GetDrawableIndex(csm_id(name)));
+}
+
+int32_t Model::getDrawableCulling(const std::string& name) const
+{
+	auto m = model->GetModel();
+	return m->GetDrawableCulling(m->GetDrawableIndex(csm_id(name)));
+}
+
+int32_t Model::getDrawableBlendMode(const std::string& name) const
+{
+	auto m = model->GetModel();
+	return m->GetDrawableBlendMode(m->GetDrawableIndex(csm_id(name)));
 }
 
 Vec2 Model::getGravity() const
