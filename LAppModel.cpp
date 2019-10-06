@@ -65,17 +65,26 @@ LAppModel::LAppModel()
 
 LAppModel::~LAppModel()
 {
-    if (_debugMode)LAppPal::PrintLog("[APP]delete model: %s", _modelSetting->GetModelFileName());
+	if (_debugMode)
+	{
+		if(_modelSetting)
+			LAppPal::PrintLog("[APP]delete model: %s", _modelSetting->GetModelFileName());
+		else
+			LAppPal::PrintLog("[APP]delete model");
+	}
 
     ReleaseMotions();
     ReleaseExpressions();
 
-    for (csmInt32 i = 0; i < _modelSetting->GetMotionGroupCount(); i++)
-    {
-        const csmChar* group = _modelSetting->GetMotionGroupName(i);
-        ReleaseMotionGroup(group);
-    }
-    CSM_DELETE(_modelSetting);
+	if (_modelSetting)
+	{
+	    for (csmInt32 i = 0; i < _modelSetting->GetMotionGroupCount(); i++)
+	    {
+	        const csmChar* group = _modelSetting->GetMotionGroupName(i);
+	        ReleaseMotionGroup(group);
+	    }
+	    CSM_DELETE(_modelSetting);
+	}
 
     //cocos2d
 	_loadedTextures.clear();
@@ -92,6 +101,11 @@ bool LAppModel::LoadAssets(const csmChar* dir, const csmChar* fileName)
     const csmString path = csmString(dir) + fileName;
 
     csmByte* buffer = CreateBuffer(path.GetRawString(), &size);
+	if(!buffer)
+	{
+		if (_debugMode)LAppPal::PrintLog("[APP] failed to load model setting: %s", fileName);
+		return false;
+	}
     auto setting = new CubismModelSettingJson(buffer, size);
     DeleteBuffer(buffer, path.GetRawString());
 
@@ -115,7 +129,6 @@ void LAppModel::SetupModel(ICubismModelSetting* setting)
 
     csmByte* buffer;
     csmSizeInt size;
-
     //Cubism Model
     if (strcmp(_modelSetting->GetModelFileName(), "") != 0)
     {
@@ -125,9 +138,15 @@ void LAppModel::SetupModel(ICubismModelSetting* setting)
         if (_debugMode)LAppPal::PrintLog("[APP]create model: %s", setting->GetModelFileName());
 
         buffer = CreateBuffer(path.GetRawString(), &size);
-        LoadModel(buffer, size);
-        DeleteBuffer(buffer, path.GetRawString());
-
+		if (buffer)
+		{
+	        LoadModel(buffer, size);
+	        DeleteBuffer(buffer, path.GetRawString());
+		}
+		else
+		{
+			if (_debugMode)LAppPal::PrintLog("[APP] failed to load model at %s", path.GetRawString());			
+		}
     }
 
     //Expression
@@ -141,16 +160,23 @@ void LAppModel::SetupModel(ICubismModelSetting* setting)
             path = _modelHomeDir + path;
 
             buffer = CreateBuffer(path.GetRawString(), &size);
-            ACubismMotion* motion = LoadExpression(buffer, size, name.GetRawString());
-
-            if (_expressions[name] != nullptr)
+            if (buffer)
             {
-                ACubismMotion::Delete(_expressions[name]);
-                _expressions[name] = nullptr;
-            }
-            _expressions[name] = motion;
+	            ACubismMotion* motion = LoadExpression(buffer, size, name.GetRawString());
 
-            DeleteBuffer(buffer, path.GetRawString());
+	            if (_expressions[name] != nullptr)
+	            {
+	                ACubismMotion::Delete(_expressions[name]);
+	                _expressions[name] = nullptr;
+	            }
+	            _expressions[name] = motion;
+
+	            DeleteBuffer(buffer, path.GetRawString());
+            }
+            else
+            {
+				if (_debugMode)LAppPal::PrintLog("[APP] failed to load expression at %s", path.GetRawString());
+            }
         }
     }
 
@@ -161,8 +187,15 @@ void LAppModel::SetupModel(ICubismModelSetting* setting)
         path = _modelHomeDir + path;
 
         buffer = CreateBuffer(path.GetRawString(), &size);
-        LoadPhysics(buffer, size);
-        DeleteBuffer(buffer, path.GetRawString());
+        if (buffer)
+        {
+			LoadPhysics(buffer, size);
+			DeleteBuffer(buffer, path.GetRawString());
+        }
+        else
+        {
+			if (_debugMode)LAppPal::PrintLog("[APP] failed to load physics at %s", path.GetRawString());
+        }
     }
 
     //Pose
@@ -172,8 +205,15 @@ void LAppModel::SetupModel(ICubismModelSetting* setting)
         path = _modelHomeDir + path;
 
         buffer = CreateBuffer(path.GetRawString(), &size);
-        LoadPose(buffer, size);
-        DeleteBuffer(buffer, path.GetRawString());
+		if (buffer)
+		{
+			LoadPose(buffer, size);
+	        DeleteBuffer(buffer, path.GetRawString());
+		}
+		else
+		{
+			if (_debugMode)LAppPal::PrintLog("[APP] failed to load pose at %s", path.GetRawString());
+		}
     }
 
     //EyeBlink
@@ -204,8 +244,15 @@ void LAppModel::SetupModel(ICubismModelSetting* setting)
         csmString path = _modelSetting->GetUserDataFile();
         path = _modelHomeDir + path;
         buffer = CreateBuffer(path.GetRawString(), &size);
-        LoadUserData(buffer,size);
-        DeleteBuffer(buffer, path.GetRawString());
+		if (buffer)
+		{
+			LoadUserData(buffer,size);
+			DeleteBuffer(buffer, path.GetRawString());
+		}
+		else
+		{
+			if (_debugMode)LAppPal::PrintLog("[APP] failed to load user data at %s", path.GetRawString());
+		}
     }
 
     // EyeBlinkIds
@@ -261,6 +308,11 @@ void LAppModel::PreloadMotionGroup(const csmChar* group)
         csmByte* buffer;
         csmSizeInt size;
         buffer = CreateBuffer(path.GetRawString(), &size);
+        if (!buffer)
+        {
+			if (_debugMode)LAppPal::PrintLog("[APP] failed to load motion at %s", path.GetRawString());
+			continue;
+        }
         CubismMotion* tmpMotion = static_cast<CubismMotion*>(LoadMotion(buffer, size, name.GetRawString()));
 
         csmFloat32 fadeTime = _modelSetting->GetMotionFadeInTimeValue(group, i);
@@ -441,6 +493,11 @@ CubismMotionQueueEntryHandle LAppModel::StartMotion(const csmChar* group, csmInt
     }
 
     const csmString fileName = _modelSetting->GetMotionFileName(group, no);
+	if (fileName.GetLength() == 0)
+	{
+		if (_debugMode)LAppPal::PrintLog("[APP]can't find motion file of [%s_%d]", group, no);
+		return InvalidMotionQueueEntryHandleValue;
+	}
 
     //ex) idle_0
     csmString name = Utils::CubismString::GetFormatedString("%s_%d", group, no);
@@ -455,6 +512,11 @@ CubismMotionQueueEntryHandle LAppModel::StartMotion(const csmChar* group, csmInt
         csmByte* buffer;
         csmSizeInt size;
         buffer = CreateBuffer(path.GetRawString(), &size);
+		if(!buffer)
+		{
+			if (_debugMode)LAppPal::PrintLog("[APP]can't create buffer for motion [%s_%d]", group, no);
+			return InvalidMotionQueueEntryHandleValue;
+		}
         motion = static_cast<CubismMotion*>(LoadMotion(buffer, size, nullptr));
         csmFloat32 fadeTime = _modelSetting->GetMotionFadeInTimeValue(group, no);
         if (fadeTime >= 0.0f)
