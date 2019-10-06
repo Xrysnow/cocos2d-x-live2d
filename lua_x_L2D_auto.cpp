@@ -2,6 +2,7 @@
 #include "Model.h"
 #include "scripting/lua-bindings/manual/tolua_fix.h"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
+#include "UtilLuaConversion.h"
 
 int lua_x_L2D_Model_setGravity(lua_State* tolua_S)
 {
@@ -139,6 +140,11 @@ int lua_x_L2D_Model_setOnDraggingCallback(lua_State* tolua_S)
     {
         int arg0;
 		arg0 = toluafix_ref_function(tolua_S, 2, 0);
+        if(!arg0)
+        {
+            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_setOnDraggingCallback'", nullptr);
+            return 0;
+        }
         cobj->setOnDraggingCallback(arg0);
         lua_settop(tolua_S, 1);
         return 1;
@@ -181,9 +187,9 @@ int lua_x_L2D_Model_getParameterValue(lua_State* tolua_S)
     argc = lua_gettop(tolua_S)-1;
     if (argc == 1) 
     {
-        const char* arg0;
+        std::string arg0;
 
-        std::string arg0_tmp; ok &= luaval_to_std_string(tolua_S, 2, &arg0_tmp, "l2d.Model:getParameterValue"); arg0 = arg0_tmp.c_str();
+        ok &= luaval_to_std_string(tolua_S, 2,&arg0, "l2d.Model:getParameterValue");
         if(!ok)
         {
             tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_getParameterValue'", nullptr);
@@ -199,6 +205,103 @@ int lua_x_L2D_Model_getParameterValue(lua_State* tolua_S)
 #if COCOS2D_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_getParameterValue'.",&tolua_err);
+#endif
+
+    return 0;
+}
+int lua_x_L2D_Model_getDrawableCount(lua_State* tolua_S)
+{
+    int argc = 0;
+    l2d::Model* cobj = nullptr;
+    bool ok  = true;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_Error tolua_err;
+#endif
+
+
+#if COCOS2D_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"l2d.Model",0,&tolua_err)) goto tolua_lerror;
+#endif
+
+    cobj = (l2d::Model*)tolua_tousertype(tolua_S,1,0);
+
+#if COCOS2D_DEBUG >= 1
+    if (!cobj) 
+    {
+        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_x_L2D_Model_getDrawableCount'", nullptr);
+        return 0;
+    }
+#endif
+
+    argc = lua_gettop(tolua_S)-1;
+    if (argc == 0) 
+    {
+        if(!ok)
+        {
+            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_getDrawableCount'", nullptr);
+            return 0;
+        }
+        int ret = cobj->getDrawableCount();
+        tolua_pushnumber(tolua_S,(lua_Number)ret);
+        return 1;
+    }
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:getDrawableCount",argc, 0);
+    return 0;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_lerror:
+    tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_getDrawableCount'.",&tolua_err);
+#endif
+
+    return 0;
+}
+int lua_x_L2D_Model_getDrawableOpacity(lua_State* tolua_S)
+{
+    int argc = 0;
+    l2d::Model* cobj = nullptr;
+    bool ok  = true;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_Error tolua_err;
+#endif
+
+
+#if COCOS2D_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"l2d.Model",0,&tolua_err)) goto tolua_lerror;
+#endif
+
+    cobj = (l2d::Model*)tolua_tousertype(tolua_S,1,0);
+
+#if COCOS2D_DEBUG >= 1
+    if (!cobj) 
+    {
+        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_x_L2D_Model_getDrawableOpacity'", nullptr);
+        return 0;
+    }
+#endif
+
+    argc = lua_gettop(tolua_S)-1;
+    if (argc == 1) 
+    {
+        std::string arg0;
+
+        ok &= luaval_to_std_string(tolua_S, 2,&arg0, "l2d.Model:getDrawableOpacity");
+        if(!ok)
+        {
+            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_getDrawableOpacity'", nullptr);
+            return 0;
+        }
+        double ret = cobj->getDrawableOpacity(arg0);
+        tolua_pushnumber(tolua_S,(lua_Number)ret);
+        return 1;
+    }
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:getDrawableOpacity",argc, 1);
+    return 0;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_lerror:
+    tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_getDrawableOpacity'.",&tolua_err);
 #endif
 
     return 0;
@@ -249,6 +352,56 @@ int lua_x_L2D_Model_setModelOpacity(lua_State* tolua_S)
 #if COCOS2D_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_setModelOpacity'.",&tolua_err);
+#endif
+
+    return 0;
+}
+int lua_x_L2D_Model_getDrawableBlendMode(lua_State* tolua_S)
+{
+    int argc = 0;
+    l2d::Model* cobj = nullptr;
+    bool ok  = true;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_Error tolua_err;
+#endif
+
+
+#if COCOS2D_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"l2d.Model",0,&tolua_err)) goto tolua_lerror;
+#endif
+
+    cobj = (l2d::Model*)tolua_tousertype(tolua_S,1,0);
+
+#if COCOS2D_DEBUG >= 1
+    if (!cobj) 
+    {
+        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_x_L2D_Model_getDrawableBlendMode'", nullptr);
+        return 0;
+    }
+#endif
+
+    argc = lua_gettop(tolua_S)-1;
+    if (argc == 1) 
+    {
+        std::string arg0;
+
+        ok &= luaval_to_std_string(tolua_S, 2,&arg0, "l2d.Model:getDrawableBlendMode");
+        if(!ok)
+        {
+            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_getDrawableBlendMode'", nullptr);
+            return 0;
+        }
+        int ret = cobj->getDrawableBlendMode(arg0);
+        tolua_pushnumber(tolua_S,(lua_Number)ret);
+        return 1;
+    }
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:getDrawableBlendMode",argc, 1);
+    return 0;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_lerror:
+    tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_getDrawableBlendMode'.",&tolua_err);
 #endif
 
     return 0;
@@ -359,6 +512,59 @@ int lua_x_L2D_Model_setDebugRectEnable(lua_State* tolua_S)
 
     return 0;
 }
+int lua_x_L2D_Model_setPartOpacity(lua_State* tolua_S)
+{
+    int argc = 0;
+    l2d::Model* cobj = nullptr;
+    bool ok  = true;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_Error tolua_err;
+#endif
+
+
+#if COCOS2D_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"l2d.Model",0,&tolua_err)) goto tolua_lerror;
+#endif
+
+    cobj = (l2d::Model*)tolua_tousertype(tolua_S,1,0);
+
+#if COCOS2D_DEBUG >= 1
+    if (!cobj) 
+    {
+        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_x_L2D_Model_setPartOpacity'", nullptr);
+        return 0;
+    }
+#endif
+
+    argc = lua_gettop(tolua_S)-1;
+    if (argc == 2) 
+    {
+        std::string arg0;
+        double arg1;
+
+        ok &= luaval_to_std_string(tolua_S, 2,&arg0, "l2d.Model:setPartOpacity");
+
+        ok &= luaval_to_number(tolua_S, 3,&arg1, "l2d.Model:setPartOpacity");
+        if(!ok)
+        {
+            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_setPartOpacity'", nullptr);
+            return 0;
+        }
+        cobj->setPartOpacity(arg0, arg1);
+        lua_settop(tolua_S, 1);
+        return 1;
+    }
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:setPartOpacity",argc, 2);
+    return 0;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_lerror:
+    tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_setPartOpacity'.",&tolua_err);
+#endif
+
+    return 0;
+}
 int lua_x_L2D_Model_setLipValue(lua_State* tolua_S)
 {
     int argc = 0;
@@ -405,6 +611,53 @@ int lua_x_L2D_Model_setLipValue(lua_State* tolua_S)
 #if COCOS2D_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_setLipValue'.",&tolua_err);
+#endif
+
+    return 0;
+}
+int lua_x_L2D_Model_getWind(lua_State* tolua_S)
+{
+    int argc = 0;
+    l2d::Model* cobj = nullptr;
+    bool ok  = true;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_Error tolua_err;
+#endif
+
+
+#if COCOS2D_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"l2d.Model",0,&tolua_err)) goto tolua_lerror;
+#endif
+
+    cobj = (l2d::Model*)tolua_tousertype(tolua_S,1,0);
+
+#if COCOS2D_DEBUG >= 1
+    if (!cobj) 
+    {
+        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_x_L2D_Model_getWind'", nullptr);
+        return 0;
+    }
+#endif
+
+    argc = lua_gettop(tolua_S)-1;
+    if (argc == 0) 
+    {
+        if(!ok)
+        {
+            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_getWind'", nullptr);
+            return 0;
+        }
+        cocos2d::Vec2 ret = cobj->getWind();
+        vec2_to_luaval(tolua_S, ret);
+        return 1;
+    }
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:getWind",argc, 0);
+    return 0;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_lerror:
+    tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_getWind'.",&tolua_err);
 #endif
 
     return 0;
@@ -456,6 +709,53 @@ int lua_x_L2D_Model_getModelOpacity(lua_State* tolua_S)
 
     return 0;
 }
+int lua_x_L2D_Model_getDrawableNames(lua_State* tolua_S)
+{
+    int argc = 0;
+    l2d::Model* cobj = nullptr;
+    bool ok  = true;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_Error tolua_err;
+#endif
+
+
+#if COCOS2D_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"l2d.Model",0,&tolua_err)) goto tolua_lerror;
+#endif
+
+    cobj = (l2d::Model*)tolua_tousertype(tolua_S,1,0);
+
+#if COCOS2D_DEBUG >= 1
+    if (!cobj) 
+    {
+        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_x_L2D_Model_getDrawableNames'", nullptr);
+        return 0;
+    }
+#endif
+
+    argc = lua_gettop(tolua_S)-1;
+    if (argc == 0) 
+    {
+        if(!ok)
+        {
+            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_getDrawableNames'", nullptr);
+            return 0;
+        }
+        std::vector<std::string> ret = cobj->getDrawableNames();
+        ccvector_std_string_to_luaval(tolua_S, ret);
+        return 1;
+    }
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:getDrawableNames",argc, 0);
+    return 0;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_lerror:
+    tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_getDrawableNames'.",&tolua_err);
+#endif
+
+    return 0;
+}
 int lua_x_L2D_Model_setOnHitCallback(lua_State* tolua_S)
 {
     int argc = 0;
@@ -486,6 +786,11 @@ int lua_x_L2D_Model_setOnHitCallback(lua_State* tolua_S)
     {
         int arg0;
 		arg0 = toluafix_ref_function(tolua_S, 2, 0);
+        if(!arg0)
+        {
+            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_setOnHitCallback'", nullptr);
+            return 0;
+        }
         cobj->setOnHitCallback(arg0);
         lua_settop(tolua_S, 1);
         return 1;
@@ -625,9 +930,9 @@ int lua_x_L2D_Model_getParameterMinimumValue(lua_State* tolua_S)
     argc = lua_gettop(tolua_S)-1;
     if (argc == 1) 
     {
-        const char* arg0;
+        std::string arg0;
 
-        std::string arg0_tmp; ok &= luaval_to_std_string(tolua_S, 2, &arg0_tmp, "l2d.Model:getParameterMinimumValue"); arg0 = arg0_tmp.c_str();
+        ok &= luaval_to_std_string(tolua_S, 2,&arg0, "l2d.Model:getParameterMinimumValue");
         if(!ok)
         {
             tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_getParameterMinimumValue'", nullptr);
@@ -643,6 +948,56 @@ int lua_x_L2D_Model_getParameterMinimumValue(lua_State* tolua_S)
 #if COCOS2D_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_getParameterMinimumValue'.",&tolua_err);
+#endif
+
+    return 0;
+}
+int lua_x_L2D_Model_getPartOpacity(lua_State* tolua_S)
+{
+    int argc = 0;
+    l2d::Model* cobj = nullptr;
+    bool ok  = true;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_Error tolua_err;
+#endif
+
+
+#if COCOS2D_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"l2d.Model",0,&tolua_err)) goto tolua_lerror;
+#endif
+
+    cobj = (l2d::Model*)tolua_tousertype(tolua_S,1,0);
+
+#if COCOS2D_DEBUG >= 1
+    if (!cobj) 
+    {
+        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_x_L2D_Model_getPartOpacity'", nullptr);
+        return 0;
+    }
+#endif
+
+    argc = lua_gettop(tolua_S)-1;
+    if (argc == 1) 
+    {
+        std::string arg0;
+
+        ok &= luaval_to_std_string(tolua_S, 2,&arg0, "l2d.Model:getPartOpacity");
+        if(!ok)
+        {
+            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_getPartOpacity'", nullptr);
+            return 0;
+        }
+        double ret = cobj->getPartOpacity(arg0);
+        tolua_pushnumber(tolua_S,(lua_Number)ret);
+        return 1;
+    }
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:getPartOpacity",argc, 1);
+    return 0;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_lerror:
+    tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_getPartOpacity'.",&tolua_err);
 #endif
 
     return 0;
@@ -756,6 +1111,53 @@ int lua_x_L2D_Model_startRandomMotion(lua_State* tolua_S)
 
     return 0;
 }
+int lua_x_L2D_Model_getPartCount(lua_State* tolua_S)
+{
+    int argc = 0;
+    l2d::Model* cobj = nullptr;
+    bool ok  = true;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_Error tolua_err;
+#endif
+
+
+#if COCOS2D_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"l2d.Model",0,&tolua_err)) goto tolua_lerror;
+#endif
+
+    cobj = (l2d::Model*)tolua_tousertype(tolua_S,1,0);
+
+#if COCOS2D_DEBUG >= 1
+    if (!cobj) 
+    {
+        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_x_L2D_Model_getPartCount'", nullptr);
+        return 0;
+    }
+#endif
+
+    argc = lua_gettop(tolua_S)-1;
+    if (argc == 0) 
+    {
+        if(!ok)
+        {
+            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_getPartCount'", nullptr);
+            return 0;
+        }
+        int ret = cobj->getPartCount();
+        tolua_pushnumber(tolua_S,(lua_Number)ret);
+        return 1;
+    }
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:getPartCount",argc, 0);
+    return 0;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_lerror:
+    tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_getPartCount'.",&tolua_err);
+#endif
+
+    return 0;
+}
 int lua_x_L2D_Model_getCanvasRect(lua_State* tolua_S)
 {
     int argc = 0;
@@ -831,10 +1233,10 @@ int lua_x_L2D_Model_addParameterValue(lua_State* tolua_S)
     argc = lua_gettop(tolua_S)-1;
     if (argc == 2) 
     {
-        const char* arg0;
+        std::string arg0;
         double arg1;
 
-        std::string arg0_tmp; ok &= luaval_to_std_string(tolua_S, 2, &arg0_tmp, "l2d.Model:addParameterValue"); arg0 = arg0_tmp.c_str();
+        ok &= luaval_to_std_string(tolua_S, 2,&arg0, "l2d.Model:addParameterValue");
 
         ok &= luaval_to_number(tolua_S, 3,&arg1, "l2d.Model:addParameterValue");
         if(!ok)
@@ -848,11 +1250,11 @@ int lua_x_L2D_Model_addParameterValue(lua_State* tolua_S)
     }
     if (argc == 3) 
     {
-        const char* arg0;
+        std::string arg0;
         double arg1;
         double arg2;
 
-        std::string arg0_tmp; ok &= luaval_to_std_string(tolua_S, 2, &arg0_tmp, "l2d.Model:addParameterValue"); arg0 = arg0_tmp.c_str();
+        ok &= luaval_to_std_string(tolua_S, 2,&arg0, "l2d.Model:addParameterValue");
 
         ok &= luaval_to_number(tolua_S, 3,&arg1, "l2d.Model:addParameterValue");
 
@@ -872,6 +1274,103 @@ int lua_x_L2D_Model_addParameterValue(lua_State* tolua_S)
 #if COCOS2D_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_addParameterValue'.",&tolua_err);
+#endif
+
+    return 0;
+}
+int lua_x_L2D_Model_getParameterDefaultValue(lua_State* tolua_S)
+{
+    int argc = 0;
+    l2d::Model* cobj = nullptr;
+    bool ok  = true;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_Error tolua_err;
+#endif
+
+
+#if COCOS2D_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"l2d.Model",0,&tolua_err)) goto tolua_lerror;
+#endif
+
+    cobj = (l2d::Model*)tolua_tousertype(tolua_S,1,0);
+
+#if COCOS2D_DEBUG >= 1
+    if (!cobj) 
+    {
+        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_x_L2D_Model_getParameterDefaultValue'", nullptr);
+        return 0;
+    }
+#endif
+
+    argc = lua_gettop(tolua_S)-1;
+    if (argc == 1) 
+    {
+        std::string arg0;
+
+        ok &= luaval_to_std_string(tolua_S, 2,&arg0, "l2d.Model:getParameterDefaultValue");
+        if(!ok)
+        {
+            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_getParameterDefaultValue'", nullptr);
+            return 0;
+        }
+        double ret = cobj->getParameterDefaultValue(arg0);
+        tolua_pushnumber(tolua_S,(lua_Number)ret);
+        return 1;
+    }
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:getParameterDefaultValue",argc, 1);
+    return 0;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_lerror:
+    tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_getParameterDefaultValue'.",&tolua_err);
+#endif
+
+    return 0;
+}
+int lua_x_L2D_Model_getParameterNames(lua_State* tolua_S)
+{
+    int argc = 0;
+    l2d::Model* cobj = nullptr;
+    bool ok  = true;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_Error tolua_err;
+#endif
+
+
+#if COCOS2D_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"l2d.Model",0,&tolua_err)) goto tolua_lerror;
+#endif
+
+    cobj = (l2d::Model*)tolua_tousertype(tolua_S,1,0);
+
+#if COCOS2D_DEBUG >= 1
+    if (!cobj) 
+    {
+        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_x_L2D_Model_getParameterNames'", nullptr);
+        return 0;
+    }
+#endif
+
+    argc = lua_gettop(tolua_S)-1;
+    if (argc == 0) 
+    {
+        if(!ok)
+        {
+            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_getParameterNames'", nullptr);
+            return 0;
+        }
+        std::vector<std::string> ret = cobj->getParameterNames();
+        ccvector_std_string_to_luaval(tolua_S, ret);
+        return 1;
+    }
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:getParameterNames",argc, 0);
+    return 0;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_lerror:
+    tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_getParameterNames'.",&tolua_err);
 #endif
 
     return 0;
@@ -904,10 +1403,10 @@ int lua_x_L2D_Model_setParameterValue(lua_State* tolua_S)
     argc = lua_gettop(tolua_S)-1;
     if (argc == 2) 
     {
-        const char* arg0;
+        std::string arg0;
         double arg1;
 
-        std::string arg0_tmp; ok &= luaval_to_std_string(tolua_S, 2, &arg0_tmp, "l2d.Model:setParameterValue"); arg0 = arg0_tmp.c_str();
+        ok &= luaval_to_std_string(tolua_S, 2,&arg0, "l2d.Model:setParameterValue");
 
         ok &= luaval_to_number(tolua_S, 3,&arg1, "l2d.Model:setParameterValue");
         if(!ok)
@@ -921,11 +1420,11 @@ int lua_x_L2D_Model_setParameterValue(lua_State* tolua_S)
     }
     if (argc == 3) 
     {
-        const char* arg0;
+        std::string arg0;
         double arg1;
         double arg2;
 
-        std::string arg0_tmp; ok &= luaval_to_std_string(tolua_S, 2, &arg0_tmp, "l2d.Model:setParameterValue"); arg0 = arg0_tmp.c_str();
+        ok &= luaval_to_std_string(tolua_S, 2,&arg0, "l2d.Model:setParameterValue");
 
         ok &= luaval_to_number(tolua_S, 3,&arg1, "l2d.Model:setParameterValue");
 
@@ -1001,6 +1500,53 @@ int lua_x_L2D_Model_setBlinkingSettings(lua_State* tolua_S)
 #if COCOS2D_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_setBlinkingSettings'.",&tolua_err);
+#endif
+
+    return 0;
+}
+int lua_x_L2D_Model_getPartNames(lua_State* tolua_S)
+{
+    int argc = 0;
+    l2d::Model* cobj = nullptr;
+    bool ok  = true;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_Error tolua_err;
+#endif
+
+
+#if COCOS2D_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"l2d.Model",0,&tolua_err)) goto tolua_lerror;
+#endif
+
+    cobj = (l2d::Model*)tolua_tousertype(tolua_S,1,0);
+
+#if COCOS2D_DEBUG >= 1
+    if (!cobj) 
+    {
+        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_x_L2D_Model_getPartNames'", nullptr);
+        return 0;
+    }
+#endif
+
+    argc = lua_gettop(tolua_S)-1;
+    if (argc == 0) 
+    {
+        if(!ok)
+        {
+            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_getPartNames'", nullptr);
+            return 0;
+        }
+        std::vector<std::string> ret = cobj->getPartNames();
+        ccvector_std_string_to_luaval(tolua_S, ret);
+        return 1;
+    }
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:getPartNames",argc, 0);
+    return 0;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_lerror:
+    tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_getPartNames'.",&tolua_err);
 #endif
 
     return 0;
@@ -1180,7 +1726,7 @@ int lua_x_L2D_Model_getDebugRectRenderer(lua_State* tolua_S)
             return 0;
         }
         cocos2d::DrawNode* ret = cobj->getDebugRectRenderer();
-        object_to_luaval<cocos2d::DrawNode>(tolua_S, "cc.DrawNode",(cocos2d::DrawNode*)ret);
+        lstg::lua::native_to_luaval(tolua_S, ret);
         return 1;
     }
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:getDebugRectRenderer",argc, 0);
@@ -1189,6 +1735,53 @@ int lua_x_L2D_Model_getDebugRectRenderer(lua_State* tolua_S)
 #if COCOS2D_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_getDebugRectRenderer'.",&tolua_err);
+#endif
+
+    return 0;
+}
+int lua_x_L2D_Model_getParameterCount(lua_State* tolua_S)
+{
+    int argc = 0;
+    l2d::Model* cobj = nullptr;
+    bool ok  = true;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_Error tolua_err;
+#endif
+
+
+#if COCOS2D_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"l2d.Model",0,&tolua_err)) goto tolua_lerror;
+#endif
+
+    cobj = (l2d::Model*)tolua_tousertype(tolua_S,1,0);
+
+#if COCOS2D_DEBUG >= 1
+    if (!cobj) 
+    {
+        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_x_L2D_Model_getParameterCount'", nullptr);
+        return 0;
+    }
+#endif
+
+    argc = lua_gettop(tolua_S)-1;
+    if (argc == 0) 
+    {
+        if(!ok)
+        {
+            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_getParameterCount'", nullptr);
+            return 0;
+        }
+        int ret = cobj->getParameterCount();
+        tolua_pushnumber(tolua_S,(lua_Number)ret);
+        return 1;
+    }
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:getParameterCount",argc, 0);
+    return 0;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_lerror:
+    tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_getParameterCount'.",&tolua_err);
 #endif
 
     return 0;
@@ -1418,9 +2011,9 @@ int lua_x_L2D_Model_getParameterMaximumValue(lua_State* tolua_S)
     argc = lua_gettop(tolua_S)-1;
     if (argc == 1) 
     {
-        const char* arg0;
+        std::string arg0;
 
-        std::string arg0_tmp; ok &= luaval_to_std_string(tolua_S, 2, &arg0_tmp, "l2d.Model:getParameterMaximumValue"); arg0 = arg0_tmp.c_str();
+        ok &= luaval_to_std_string(tolua_S, 2,&arg0, "l2d.Model:getParameterMaximumValue");
         if(!ok)
         {
             tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_getParameterMaximumValue'", nullptr);
@@ -1440,7 +2033,7 @@ int lua_x_L2D_Model_getParameterMaximumValue(lua_State* tolua_S)
 
     return 0;
 }
-int lua_x_L2D_Model_getWind(lua_State* tolua_S)
+int lua_x_L2D_Model_getDrawableCulling(lua_State* tolua_S)
 {
     int argc = 0;
     l2d::Model* cobj = nullptr;
@@ -1460,29 +2053,32 @@ int lua_x_L2D_Model_getWind(lua_State* tolua_S)
 #if COCOS2D_DEBUG >= 1
     if (!cobj) 
     {
-        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_x_L2D_Model_getWind'", nullptr);
+        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_x_L2D_Model_getDrawableCulling'", nullptr);
         return 0;
     }
 #endif
 
     argc = lua_gettop(tolua_S)-1;
-    if (argc == 0) 
+    if (argc == 1) 
     {
+        std::string arg0;
+
+        ok &= luaval_to_std_string(tolua_S, 2,&arg0, "l2d.Model:getDrawableCulling");
         if(!ok)
         {
-            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_getWind'", nullptr);
+            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_getDrawableCulling'", nullptr);
             return 0;
         }
-        cocos2d::Vec2 ret = cobj->getWind();
-        vec2_to_luaval(tolua_S, ret);
+        int ret = cobj->getDrawableCulling(arg0);
+        tolua_pushnumber(tolua_S,(lua_Number)ret);
         return 1;
     }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:getWind",argc, 0);
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:getDrawableCulling",argc, 1);
     return 0;
 
 #if COCOS2D_DEBUG >= 1
     tolua_lerror:
-    tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_getWind'.",&tolua_err);
+    tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_getDrawableCulling'.",&tolua_err);
 #endif
 
     return 0;
@@ -1615,10 +2211,10 @@ int lua_x_L2D_Model_multiplyParameterValue(lua_State* tolua_S)
     argc = lua_gettop(tolua_S)-1;
     if (argc == 2) 
     {
-        const char* arg0;
+        std::string arg0;
         double arg1;
 
-        std::string arg0_tmp; ok &= luaval_to_std_string(tolua_S, 2, &arg0_tmp, "l2d.Model:multiplyParameterValue"); arg0 = arg0_tmp.c_str();
+        ok &= luaval_to_std_string(tolua_S, 2,&arg0, "l2d.Model:multiplyParameterValue");
 
         ok &= luaval_to_number(tolua_S, 3,&arg1, "l2d.Model:multiplyParameterValue");
         if(!ok)
@@ -1632,11 +2228,11 @@ int lua_x_L2D_Model_multiplyParameterValue(lua_State* tolua_S)
     }
     if (argc == 3) 
     {
-        const char* arg0;
+        std::string arg0;
         double arg1;
         double arg2;
 
-        std::string arg0_tmp; ok &= luaval_to_std_string(tolua_S, 2, &arg0_tmp, "l2d.Model:multiplyParameterValue"); arg0 = arg0_tmp.c_str();
+        ok &= luaval_to_std_string(tolua_S, 2,&arg0, "l2d.Model:multiplyParameterValue");
 
         ok &= luaval_to_number(tolua_S, 3,&arg1, "l2d.Model:multiplyParameterValue");
 
@@ -1781,7 +2377,7 @@ int lua_x_L2D_Model_create(lua_State* tolua_S)
             return 0;
         }
         l2d::Model* ret = l2d::Model::create(arg0, arg1);
-        object_to_luaval<l2d::Model>(tolua_S, "l2d.Model",(l2d::Model*)ret);
+        lstg::lua::native_to_luaval(tolua_S, ret);
         return 1;
     }
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d\n ", "l2d.Model:create",argc, 2);
@@ -1808,31 +2404,43 @@ int lua_register_x_L2D_Model(lua_State* tolua_S)
         tolua_function(tolua_S,"setAcceleration",lua_x_L2D_Model_setAcceleration);
         tolua_function(tolua_S,"setOnDraggingCallback",lua_x_L2D_Model_setOnDraggingCallback);
         tolua_function(tolua_S,"getParameterValue",lua_x_L2D_Model_getParameterValue);
+        tolua_function(tolua_S,"getDrawableCount",lua_x_L2D_Model_getDrawableCount);
+        tolua_function(tolua_S,"getDrawableOpacity",lua_x_L2D_Model_getDrawableOpacity);
         tolua_function(tolua_S,"setModelOpacity",lua_x_L2D_Model_setModelOpacity);
+        tolua_function(tolua_S,"getDrawableBlendMode",lua_x_L2D_Model_getDrawableBlendMode);
         tolua_function(tolua_S,"areaHitTest",lua_x_L2D_Model_areaHitTest);
         tolua_function(tolua_S,"setDebugRectEnable",lua_x_L2D_Model_setDebugRectEnable);
+        tolua_function(tolua_S,"setPartOpacity",lua_x_L2D_Model_setPartOpacity);
         tolua_function(tolua_S,"setLipValue",lua_x_L2D_Model_setLipValue);
+        tolua_function(tolua_S,"getWind",lua_x_L2D_Model_getWind);
         tolua_function(tolua_S,"getModelOpacity",lua_x_L2D_Model_getModelOpacity);
+        tolua_function(tolua_S,"getDrawableNames",lua_x_L2D_Model_getDrawableNames);
         tolua_function(tolua_S,"setOnHitCallback",lua_x_L2D_Model_setOnHitCallback);
         tolua_function(tolua_S,"setWind",lua_x_L2D_Model_setWind);
         tolua_function(tolua_S,"getMotionGroupNames",lua_x_L2D_Model_getMotionGroupNames);
         tolua_function(tolua_S,"getParameterMinimumValue",lua_x_L2D_Model_getParameterMinimumValue);
+        tolua_function(tolua_S,"getPartOpacity",lua_x_L2D_Model_getPartOpacity);
         tolua_function(tolua_S,"startMotion",lua_x_L2D_Model_startMotion);
         tolua_function(tolua_S,"startRandomMotion",lua_x_L2D_Model_startRandomMotion);
+        tolua_function(tolua_S,"getPartCount",lua_x_L2D_Model_getPartCount);
         tolua_function(tolua_S,"getCanvasRect",lua_x_L2D_Model_getCanvasRect);
         tolua_function(tolua_S,"addParameterValue",lua_x_L2D_Model_addParameterValue);
+        tolua_function(tolua_S,"getParameterDefaultValue",lua_x_L2D_Model_getParameterDefaultValue);
+        tolua_function(tolua_S,"getParameterNames",lua_x_L2D_Model_getParameterNames);
         tolua_function(tolua_S,"setParameterValue",lua_x_L2D_Model_setParameterValue);
         tolua_function(tolua_S,"setBlinkingSettings",lua_x_L2D_Model_setBlinkingSettings);
+        tolua_function(tolua_S,"getPartNames",lua_x_L2D_Model_getPartNames);
         tolua_function(tolua_S,"setRandomExpression",lua_x_L2D_Model_setRandomExpression);
         tolua_function(tolua_S,"getMotionNames",lua_x_L2D_Model_getMotionNames);
         tolua_function(tolua_S,"getGravity",lua_x_L2D_Model_getGravity);
         tolua_function(tolua_S,"getDebugRectRenderer",lua_x_L2D_Model_getDebugRectRenderer);
+        tolua_function(tolua_S,"getParameterCount",lua_x_L2D_Model_getParameterCount);
         tolua_function(tolua_S,"setExpression",lua_x_L2D_Model_setExpression);
         tolua_function(tolua_S,"setModelColor",lua_x_L2D_Model_setModelColor);
         tolua_function(tolua_S,"setBlinkingInterval",lua_x_L2D_Model_setBlinkingInterval);
         tolua_function(tolua_S,"getLipValue",lua_x_L2D_Model_getLipValue);
         tolua_function(tolua_S,"getParameterMaximumValue",lua_x_L2D_Model_getParameterMaximumValue);
-        tolua_function(tolua_S,"getWind",lua_x_L2D_Model_getWind);
+        tolua_function(tolua_S,"getDrawableCulling",lua_x_L2D_Model_getDrawableCulling);
         tolua_function(tolua_S,"getModelColor",lua_x_L2D_Model_getModelColor);
         tolua_function(tolua_S,"setDragging",lua_x_L2D_Model_setDragging);
         tolua_function(tolua_S,"multiplyParameterValue",lua_x_L2D_Model_multiplyParameterValue);
