@@ -164,7 +164,7 @@ void Model::setModelColor(const Color4B& color)
 Color4B Model::getModelColor() const
 {
 	const auto color = model->GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->GetModelColor();
-	return Color4B(color.R, color.G, color.B, color.A);
+	return {color.R, color.G, color.B, color.A};
 }
 
 void Model::setDragging(float x, float y)
@@ -319,8 +319,8 @@ bool Model::hitTest(const cocos2d::Vec2& pt, const cocos2d::Camera* camera, coco
 {
 	const auto size = getContentSize();
 	const auto anch = getAnchorPoint();
-	Rect rect(-size.width * anch.x, -size.height * anch.y, size.width, size.height);
-	return isScreenPointInRect(pt, camera, getWorldToNodeTransform(), rect, nullptr);
+	return isScreenPointInRect(pt, camera, getWorldToNodeTransform(),
+		{ -size.width * anch.x, -size.height * anch.y, size.width, size.height }, nullptr);
 }
 
 int32_t Model::getParameterCount() const
@@ -332,8 +332,10 @@ std::vector<std::string> Model::getParameterNames() const
 {
 	const auto m = model->GetModel()->GetModel();
 	const auto parameterIds = csmGetParameterIds(m);
+	const auto parameterCount = csmGetParameterCount(m);
 	std::vector<std::string> ret;
-	for (auto i = 0; i < csmGetParameterCount(m); ++i)
+	ret.reserve(parameterCount);
+	for (auto i = 0; i < parameterCount; ++i)
 		ret.emplace_back(parameterIds[i]);
 	return ret;
 }
@@ -386,8 +388,10 @@ std::vector<std::string> Model::getPartNames() const
 {
 	const auto m = model->GetModel()->GetModel();
 	const auto partIds = csmGetPartIds(m);
+	const auto partCount = csmGetPartCount(m);
 	std::vector<std::string> ret;
-	for (auto i = 0; i < csmGetPartCount(m); ++i)
+	ret.reserve(partCount);
+	for (auto i = 0; i < partCount; ++i)
 		ret.emplace_back(partIds[i]);
 	return ret;
 }
@@ -411,8 +415,10 @@ std::vector<std::string> Model::getDrawableNames() const
 {
 	const auto m = model->GetModel()->GetModel();
 	const auto drawableIds = csmGetDrawableIds(m);
+	const auto drawableCount = csmGetDrawableCount(m);
 	std::vector<std::string> ret;
-	for (auto i = 0; i < csmGetDrawableCount(m); ++i)
+	ret.reserve(drawableCount);
+	for (auto i = 0; i < drawableCount; ++i)
 		ret.emplace_back(drawableIds[i]);
 	return ret;
 }
@@ -441,9 +447,9 @@ Vec2 Model::getGravity() const
 	if (phy)
 	{
 		const auto g = phy->GetOptions().Gravity;
-		return Vec2(g.X, g.Y);
+		return {g.X, g.Y};
 	}
-	return Vec2();
+	return {};
 }
 
 void Model::setGravity(const Vec2& gravity)
@@ -463,9 +469,9 @@ Vec2 Model::getWind() const
 	if (phy)
 	{
 		const auto g = phy->GetOptions().Wind;
-		return Vec2(g.X, g.Y);
+		return {g.X, g.Y};
 	}
-	return Vec2();
+	return {};
 }
 
 void Model::setWind(const Vec2& wind)
