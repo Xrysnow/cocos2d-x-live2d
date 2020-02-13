@@ -4,6 +4,7 @@
 #include "XLive2D.h"
 #include "Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp"
 #include "Id/CubismIdManager.hpp"
+#include "Live2DCubismCore.h"
 
 using namespace std;
 using namespace l2d;

@@ -22,6 +22,7 @@
 #include "base/CCDirector.h"
 #include "renderer/CCTexture2D.h"
 #include "renderer/CCTextureCache.h"
+#include "renderer/backend/opengl/TextureGL.h"
 
 using namespace std;
 using namespace Csm;
@@ -683,8 +684,13 @@ void LAppModel::SetupTextures()
         // テクスチャが読めていなければバインド処理をスキップ
         if(!texture) continue;
 
-        const csmInt32 glTextueNumber = texture->getName();
-        const Texture2D::TexParams texParams = { GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE };
+		auto tex = (backend::Texture2DGL*)texture->getBackendTexture();
+        const csmInt32 glTextueNumber = tex->getHandler();
+        const Texture2D::TexParams texParams = {
+        	backend::SamplerFilter::LINEAR_MIPMAP_LINEAR,
+        	backend::SamplerFilter::LINEAR,
+			backend::SamplerAddressMode::CLAMP_TO_EDGE,
+			backend::SamplerAddressMode::CLAMP_TO_EDGE };
         texture->setTexParameters(texParams);
         texture->generateMipmap();
 		_loadedTextures.pushBack(texture);
@@ -812,14 +818,14 @@ void LAppModel::MakeRenderingTarget()
         _renderSprite->setVisible(true);
 
         // _renderSpriteのテクスチャを作成する
-        GLuint colorBuf = _renderSprite->getSprite()->getTexture()->getName();
-        glBindTexture(GL_TEXTURE_2D, colorBuf);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frameW, frameH, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        GLuint colorBuf = ((backend::Texture2DGL*)_renderSprite->getSprite()->getTexture()->getBackendTexture())->getHandler();
+		_renderSprite->getSprite()->getTexture()->setTexParameters({
+			backend::SamplerFilter::LINEAR,
+			backend::SamplerFilter::LINEAR,
+			backend::SamplerAddressMode::CLAMP_TO_EDGE,
+			backend::SamplerAddressMode::CLAMP_TO_EDGE });
+		//TODO: size is (frameW, frameH)?
+        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frameW, frameH, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
         // レンダリングバッファの描画先をそのテクスチャにする
         _renderBuffer.CreateOffscreenFrame(frameW, frameH, colorBuf);
     }

@@ -108,7 +108,7 @@ namespace l2d
 		Csm::CubismMatrix44 viewForDraw;
 		std::unordered_map<std::string, cocos2d::Rect> hitBoxes;
 
-		cocos2d::CustomCommand _drawCommand;
+		cocos2d::CallbackCommand _drawCommand;
 		bool enableDebugRect = false;
 
 		cocos2d::DrawNode* debugRenderer = nullptr;
