@@ -1,8 +1,8 @@
-﻿/*
+﻿/**
  * Copyright(c) Live2D Inc. All rights reserved.
  *
  * Use of this source code is governed by the Live2D Open Software license
- * that can be found at http://live2d.com/eula/live2d-open-software-license-agreement_en.html.
+ * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
 #pragma once
@@ -11,8 +11,9 @@
 #include <Model/CubismUserModel.hpp>
 #include <ICubismModelSetting.hpp>
 #include <Type/csmRectF.hpp>
-#include <vector>
+#include "CubismOffscreenSurface_OpenGLES2.hpp"
 #include "cocos2d.h"
+#include <vector>
 
 /**
  * @brief ユーザーが実際に使用するモデルの実装クラス<br>
@@ -61,21 +62,23 @@ public:
     /**
      * @brief   引数で指定したモーションの再生を開始する。
      *
-     * @param[in]   group           モーショングループ名
-     * @param[in]   no              グループ内の番号
-     * @param[in]   priority        優先度
-     * @return      開始したモーションの識別番号を返す。個別のモーションが終了したか否かを判定するIsFinished()の引数で使用する。開始できない時は「-1」
+     * @param[in]   group                       モーショングループ名
+     * @param[in]   no                          グループ内の番号
+     * @param[in]   priority                    優先度
+     * @param[in]   onFinishedMotionHandler     モーション再生終了時に呼び出されるコールバック関数。NULLの場合、呼び出されない。
+     * @return                                  開始したモーションの識別番号を返す。個別のモーションが終了したか否かを判定するIsFinished()の引数で使用する。開始できない時は「-1」
      */
-    Csm::CubismMotionQueueEntryHandle StartMotion(const Csm::csmChar* group, Csm::csmInt32 no, Csm::csmInt32 priority);
+    Csm::CubismMotionQueueEntryHandle StartMotion(const Csm::csmChar* group, Csm::csmInt32 no, Csm::csmInt32 priority, Csm::ACubismMotion::FinishedMotionCallback onFinishedMotionHandler = NULL);
 
     /**
      * @brief   ランダムに選ばれたモーションの再生を開始する。
      *
-     * @param[in]   group           モーショングループ名
-     * @param[in]   priority        優先度
-     * @return      開始したモーションの識別番号を返す。個別のモーションが終了したか否かを判定するIsFinished()の引数で使用する。開始できない時は「-1」
+     * @param[in]   group                       モーショングループ名
+     * @param[in]   priority                    優先度
+     * @param[in]   onFinishedMotionHandler     モーション再生終了時に呼び出されるコールバック関数。NULLの場合、呼び出されない。
+     * @return                                  開始したモーションの識別番号を返す。個別のモーションが終了したか否かを判定するIsFinished()の引数で使用する。開始できない時は「-1」
      */
-    Csm::CubismMotionQueueEntryHandle StartRandomMotion(const Csm::csmChar* group, Csm::csmInt32 priority);
+    Csm::CubismMotionQueueEntryHandle StartRandomMotion(const Csm::csmChar* group, Csm::csmInt32 priority, Csm::ACubismMotion::FinishedMotionCallback onFinishedMotionHandler = NULL);
 
     /**
      * @brief   引数で指定した表情モーションをセットする
@@ -112,6 +115,22 @@ public:
 		const Csm::CubismMatrix44& vpMatrix, const Csm::CubismVector2& windowSize);
     const Csm::csmVector<Csm::csmRectF>& GetUserDataAreas(
 		const Csm::CubismMatrix44& vpMatrix, const Csm::CubismVector2& windowSize);
+
+    /**
+     * @brief   別ターゲットに描画する際に使用するバッファ・スプライトを作成し、
+     *           スプライトをSampleSceneへ登録する
+     */
+    void MakeRenderingTarget();
+
+    /**
+     * @brief   別ターゲットに描画する際のスプライト色設定
+     * @param[in]   r   赤(0.0~1.0)
+     * @param[in]   g   緑(0.0~1.0)
+     * @param[in]   b   青(0.0~1.0)
+     * @param[in]   a   α(0.0~1.0)
+     */
+    void SetSpriteColor(float r, float g, float b, float a);
+
 
 protected:
     /**
@@ -170,7 +189,7 @@ private:
     Csm::csmString _modelHomeDir;                   ///< モデルセッティングが置かれたディレクトリ
     Csm::csmFloat32 _userTimeSeconds;               ///< デルタ時間の積算値[秒]
 
-    Csm::csmVector<Csm::CubismIdHandle> _eyeBlinkIds; ///<　モデルに設定されたまばたき機能用パラメータID
+    Csm::csmVector<Csm::CubismIdHandle> _eyeBlinkIds; ///< モデルに設定されたまばたき機能用パラメータID
     Csm::csmVector<Csm::CubismIdHandle> _lipSyncIds;  ///< モデルに設定されたリップシンク機能用パラメータID
 
     Csm::csmMap<Csm::csmString, Csm::ACubismMotion*>   _motions;       ///< 読み込まれているモーションのリスト
@@ -185,6 +204,10 @@ private:
     const Csm::CubismId* _idParamBodyAngleX;        ///< パラメータID: ParamBodyAngleX
     const Csm::CubismId* _idParamEyeBallX;          ///< パラメータID: ParamEyeBallX
     const Csm::CubismId* _idParamEyeBallY;          ///< パラメータID: ParamEyeBallXY
+
+    Csm::Rendering::CubismOffscreenFrame_OpenGLES2  _renderBuffer;  ///< モードによってはCubismOffscreenFrameのテクスチャを描画
+    cocos2d::RenderTexture* _renderSprite;          ///< _renderBufferを描画するスプライト
+    float _clearColor[4];                           ///< _renderBufferをクリアする際の色
 
 	cocos2d::Vector<cocos2d::Texture2D*> _loadedTextures;
 	Csm::csmFloat32 _lipValue;

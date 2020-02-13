@@ -1,8 +1,8 @@
-﻿/*
+﻿/**
  * Copyright(c) Live2D Inc. All rights reserved.
  *
  * Use of this source code is governed by the Live2D Open Software license
- * that can be found at http://live2d.com/eula/live2d-open-software-license-agreement_en.html.
+ * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
 //Cubism Framework
@@ -61,6 +61,11 @@ LAppModel::LAppModel()
     _idParamBodyAngleX = CubismFramework::GetIdManager()->GetId(ParamBodyAngleX);
     _idParamEyeBallX = CubismFramework::GetIdManager()->GetId(ParamEyeBallX);
     _idParamEyeBallY = CubismFramework::GetIdManager()->GetId(ParamEyeBallY);
+
+    _clearColor[0] = 1.0f;
+    _clearColor[1] = 1.0f;
+    _clearColor[2] = 1.0f;
+    _clearColor[3] = 0.0f;
 }
 
 LAppModel::~LAppModel()
@@ -72,6 +77,13 @@ LAppModel::~LAppModel()
 		else
 			LAppPal::PrintLog("[APP]delete model");
 	}
+    if (_renderSprite)
+    {
+        // Cocos本体が消滅した後ではこの呼び出しが出来ないことに注意
+        _renderSprite->removeFromParentAndCleanup(true);
+        _renderSprite = NULL;
+    }
+    _renderBuffer.DestroyOffscreenFrame();
 
     ReleaseMotions();
     ReleaseExpressions();
@@ -446,7 +458,7 @@ void LAppModel::Update()
     //ドラッグによる目の向きの調整
     _model->AddParameterValue(_idParamEyeBallX, _dragX); // -1から1の値を加える
     _model->AddParameterValue(_idParamEyeBallY, _dragY);
-/**/
+
     // 呼吸など
     if (_breath != nullptr)
     {
@@ -480,7 +492,7 @@ void LAppModel::Update()
 
 }
 
-CubismMotionQueueEntryHandle LAppModel::StartMotion(const csmChar* group, csmInt32 no, csmInt32 priority)
+CubismMotionQueueEntryHandle LAppModel::StartMotion(const csmChar* group, csmInt32 no, csmInt32 priority, ACubismMotion::FinishedMotionCallback onFinishedMotionHandler)
 {
     if (priority == PriorityForce)
     {
@@ -517,7 +529,7 @@ CubismMotionQueueEntryHandle LAppModel::StartMotion(const csmChar* group, csmInt
 			if (_debugMode)LAppPal::PrintLog("[APP]can't create buffer for motion [%s_%d]", group, no);
 			return InvalidMotionQueueEntryHandleValue;
 		}
-        motion = static_cast<CubismMotion*>(LoadMotion(buffer, size, nullptr));
+        motion = static_cast<CubismMotion*>(LoadMotion(buffer, size, nullptr, onFinishedMotionHandler));
         csmFloat32 fadeTime = _modelSetting->GetMotionFadeInTimeValue(group, no);
         if (fadeTime >= 0.0f)
         {
@@ -534,6 +546,10 @@ CubismMotionQueueEntryHandle LAppModel::StartMotion(const csmChar* group, csmInt
 
         DeleteBuffer(buffer, path.GetRawString());
     }
+    else
+    {
+        motion->SetFinishedMotionHandler(onFinishedMotionHandler);
+    }
 
     //voice
     csmString voice = _modelSetting->GetMotionSoundFileName(group, no);
@@ -542,13 +558,13 @@ CubismMotionQueueEntryHandle LAppModel::StartMotion(const csmChar* group, csmInt
         csmString path = voice;
         path = _modelHomeDir + path;
         //SimpleAudioEngine::getInstance()->playEffect(path.GetRawString());
-	}
+    }
 
     if (_debugMode)LAppPal::PrintLog("[APP]start motion: [%s_%d]", group, no);
     return  _motionManager->StartMotionPriority(motion, autoDelete, priority);
 }
 
-CubismMotionQueueEntryHandle LAppModel::StartRandomMotion(const csmChar* group, csmInt32 priority)
+CubismMotionQueueEntryHandle LAppModel::StartRandomMotion(const csmChar* group, csmInt32 priority, ACubismMotion::FinishedMotionCallback onFinishedMotionHandler)
 {
     if (_modelSetting->GetMotionCount(group) == 0)
     {
@@ -557,7 +573,7 @@ CubismMotionQueueEntryHandle LAppModel::StartRandomMotion(const csmChar* group, 
 
     csmInt32 no = rand() % _modelSetting->GetMotionCount(group);
 
-    return StartMotion(group, no, priority);
+    return StartMotion(group, no, priority, onFinishedMotionHandler);
 }
 
 void LAppModel::DoDraw()
@@ -571,11 +587,22 @@ void LAppModel::Draw(CubismMatrix44& matrix)
 {
     if (_model == nullptr)return;
 
+    if (_renderBuffer.IsValid())
+    {
+        _renderBuffer.BeginDraw();
+        _renderBuffer.Clear(_clearColor[0], _clearColor[1], _clearColor[2], _clearColor[3]);
+    }
+
     matrix.MultiplyByMatrix(_modelMatrix);
 
     GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->SetMvpMatrix(&matrix);
 
     DoDraw();
+
+    if (_renderBuffer.IsValid())
+    {
+        _renderBuffer.EndDraw();
+    }
 }
 
 csmBool LAppModel::HitTest(const csmChar* hitAreaName, csmFloat32 x, csmFloat32 y)
@@ -755,8 +782,56 @@ csmRectF LAppModel::GetDrawableArea(csmInt32 drawableIndex,
     convertRight  = convertRight  * windowSize.X / 2 + windowSize.X / 2;
     csmFloat32 convertBottom = right * currentMatrix.GetArray()[4] + bottom * currentMatrix.GetArray()[5];
     convertBottom = convertBottom * windowSize.Y / 2 + windowSize.Y / 2;
-    
+
     return csmRectF(convertLeft, convertTop, (convertRight - convertLeft), (convertBottom - convertTop));
+}
+
+void LAppModel::MakeRenderingTarget()
+{
+    // RenderTexture::createは描画タイミングで呼ぶとAssert扱いになるので注意すること
+    if (!_renderSprite && !_renderBuffer.IsValid())
+    {
+        int frameW = Director::getInstance()->getOpenGLView()->getFrameSize().width, frameH = Director::getInstance()->getOpenGLView()->getFrameSize().height;
+
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+        // Retina対策でこっちからとる
+        GLViewImpl *glimpl = (GLViewImpl *)Director::getInstance()->getOpenGLView();
+        glfwGetFramebufferSize(glimpl->getWindow(), &frameW, &frameH);
+#endif
+
+        Size visibleSize = Director::getInstance()->getVisibleSize();
+        Point origin = Director::getInstance()->getVisibleOrigin();
+
+        _renderSprite = RenderTexture::create(visibleSize.width, visibleSize.height);
+        _renderSprite->setPosition(Point(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
+        _renderSprite->getSprite()->getTexture()->setAntiAliasTexParameters();
+        _renderSprite->getSprite()->setBlendFunc(BlendFunc::ALPHA_NON_PREMULTIPLIED);
+        _renderSprite->getSprite()->setOpacityModifyRGB(false);
+        // サンプルシーンへ登録
+        //SampleScene::getInstance()->addChild(_renderSprite);
+        _renderSprite->setVisible(true);
+
+        // _renderSpriteのテクスチャを作成する
+        GLuint colorBuf = _renderSprite->getSprite()->getTexture()->getName();
+        glBindTexture(GL_TEXTURE_2D, colorBuf);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frameW, frameH, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        // レンダリングバッファの描画先をそのテクスチャにする
+        _renderBuffer.CreateOffscreenFrame(frameW, frameH, colorBuf);
+    }
+}
+
+void LAppModel::SetSpriteColor(float r, float g, float b, float a)
+{
+    if (_renderSprite != NULL)
+    {
+        _renderSprite->getSprite()->setColor(Color3B(static_cast<GLubyte>(255.0f * r), static_cast<GLubyte>(255.0f * g), static_cast<GLubyte>(255.0f * b)));
+        _renderSprite->getSprite()->setOpacity(static_cast<GLubyte>(255.0f * a));
+    }
 }
 
 std::vector<std::string> LAppModel::GetMotionNames() const

@@ -1,8 +1,8 @@
-﻿/*
+﻿/**
  * Copyright(c) Live2D Inc. All rights reserved.
  *
  * Use of this source code is governed by the Live2D Open Software license
- * that can be found at http://live2d.com/eula/live2d-open-software-license-agreement_en.html.
+ * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
 #include "LAppAllocator.hpp"
@@ -10,7 +10,7 @@
 
 using namespace Csm;
 
-void * LAppAllocator::Allocate(const csmUint32  size)
+void * LAppAllocator::Allocate(const csmSizeType  size)
 {
     return malloc(size);
 }
@@ -20,7 +20,7 @@ void LAppAllocator::Deallocate(void* memory)
     if (memory) { free(memory); }
 }
 
-void * LAppAllocator::AllocateAligned(const csmUint32 size, const csmUint32 alignment)
+void * LAppAllocator::AllocateAligned(const csmSizeType size, const csmUint32 alignment)
 {
     size_t offset, shift, alignedAddress;
     void *allocation, **preamble;
