@@ -2,7 +2,6 @@
 #include "LAppDefine.hpp"
 #include "LAppPal.hpp"
 #include <Rendering/CubismRenderer.hpp>
-#include "LogSystem.h"
 #ifdef CSM_TARGET_ANDROID_ES2
 #include <Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp>
 #endif
@@ -32,7 +31,7 @@ bool XLive2D::_init()
 	_cubismOption.LoggingLevel = LAppDefine::CubismLoggingLevel;
 	if (!Csm::CubismFramework::StartUp(&_cubismAllocator, &_cubismOption))
 	{
-		LERROR("cannot start CubismFramework");
+		cocos2d::log("[L2D] can't start framework");
 		return false;
 	}
 	CubismFramework::Initialize();
@@ -60,7 +59,7 @@ bool XLive2D::end()
 	Director::getInstance()->getEventDispatcher()->removeEventListener(_recreatedEventlistener);
 	_recreatedEventlistener = nullptr;
 	CubismFramework::Dispose();
-	LINFO("CubismFramework ended successfully");
+	cocos2d::log("[L2D] framework end successfully");
 	inited = false;
 	initTried = false;
 	return true;
