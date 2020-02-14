@@ -35,13 +35,13 @@ using namespace cocos2d;
 namespace {
 csmByte* CreateBuffer(const csmChar* path, csmSizeInt* size)
 {
-    if (DebugLogEnable)LAppPal::PrintLog("[APP]create buffer: %s ", path);
+    if (DebugLogEnable)LAppPal::PrintLog("[L2D] create buffer: %s ", path);
     return LAppPal::LoadFileAsBytes(path, size);
 }
 
 void DeleteBuffer(csmByte* buffer, const csmChar* path = "")
 {
-    if (DebugLogEnable) LAppPal::PrintLog("[APP]delete buffer: %s", path);
+    if (DebugLogEnable) LAppPal::PrintLog("[L2D] delete buffer: %s", path);
     LAppPal::ReleaseBytes(buffer);
 }
 }
@@ -73,9 +73,9 @@ LAppModel::~LAppModel()
 	if (_debugMode)
 	{
 		if(_modelSetting)
-			LAppPal::PrintLog("[APP]delete model: %s", _modelSetting->GetModelFileName());
+			LAppPal::PrintLog("[L2D] delete model: %s", _modelSetting->GetModelFileName());
 		else
-			LAppPal::PrintLog("[APP]delete model");
+			LAppPal::PrintLog("[L2D] delete model");
 	}
     if (_renderSprite)
     {
@@ -107,7 +107,7 @@ bool LAppModel::LoadAssets(const csmChar* dir, const csmChar* fileName)
 {
     _modelHomeDir = dir;
 
-    if (_debugMode)LAppPal::PrintLog("[APP]load model setting: %s", fileName);
+    if (_debugMode)LAppPal::PrintLog("[L2D] load model setting: %s", fileName);
 
     csmSizeInt size;
     const csmString path = csmString(dir) + fileName;
@@ -115,7 +115,7 @@ bool LAppModel::LoadAssets(const csmChar* dir, const csmChar* fileName)
     csmByte* buffer = CreateBuffer(path.GetRawString(), &size);
 	if(!buffer)
 	{
-		if (_debugMode)LAppPal::PrintLog("[APP] failed to load model setting: %s", fileName);
+		if (_debugMode)LAppPal::PrintLog("[L2D] failed to load model setting: %s", fileName);
 		return false;
 	}
     auto setting = new CubismModelSettingJson(buffer, size);
@@ -147,7 +147,7 @@ void LAppModel::SetupModel(ICubismModelSetting* setting)
         csmString path = _modelSetting->GetModelFileName();
         path = _modelHomeDir + path;
 
-        if (_debugMode)LAppPal::PrintLog("[APP]create model: %s", setting->GetModelFileName());
+        if (_debugMode)LAppPal::PrintLog("[L2D] create model: %s", setting->GetModelFileName());
 
         buffer = CreateBuffer(path.GetRawString(), &size);
 		if (buffer)
@@ -157,7 +157,7 @@ void LAppModel::SetupModel(ICubismModelSetting* setting)
 		}
 		else
 		{
-			if (_debugMode)LAppPal::PrintLog("[APP] failed to load model at %s", path.GetRawString());			
+			if (_debugMode)LAppPal::PrintLog("[L2D] failed to load model at %s", path.GetRawString());			
 		}
     }
 
@@ -187,7 +187,7 @@ void LAppModel::SetupModel(ICubismModelSetting* setting)
             }
             else
             {
-				if (_debugMode)LAppPal::PrintLog("[APP] failed to load expression at %s", path.GetRawString());
+				if (_debugMode)LAppPal::PrintLog("[L2D] failed to load expression at %s", path.GetRawString());
             }
         }
     }
@@ -206,7 +206,7 @@ void LAppModel::SetupModel(ICubismModelSetting* setting)
         }
         else
         {
-			if (_debugMode)LAppPal::PrintLog("[APP] failed to load physics at %s", path.GetRawString());
+			if (_debugMode)LAppPal::PrintLog("[L2D] failed to load physics at %s", path.GetRawString());
         }
     }
 
@@ -224,7 +224,7 @@ void LAppModel::SetupModel(ICubismModelSetting* setting)
 		}
 		else
 		{
-			if (_debugMode)LAppPal::PrintLog("[APP] failed to load pose at %s", path.GetRawString());
+			if (_debugMode)LAppPal::PrintLog("[L2D] failed to load pose at %s", path.GetRawString());
 		}
     }
 
@@ -263,7 +263,7 @@ void LAppModel::SetupModel(ICubismModelSetting* setting)
 		}
 		else
 		{
-			if (_debugMode)LAppPal::PrintLog("[APP] failed to load user data at %s", path.GetRawString());
+			if (_debugMode)LAppPal::PrintLog("[L2D] failed to load user data at %s", path.GetRawString());
 		}
     }
 
@@ -315,14 +315,14 @@ void LAppModel::PreloadMotionGroup(const csmChar* group)
         csmString path = _modelSetting->GetMotionFileName(group, i);
         path = _modelHomeDir + path;
 
-        if (_debugMode)LAppPal::PrintLog("[APP]load motion: %s => [%s_%d] ", path.GetRawString(), group, i);
+        if (_debugMode)LAppPal::PrintLog("[L2D] load motion: %s => [%s_%d] ", path.GetRawString(), group, i);
 
         csmByte* buffer;
         csmSizeInt size;
         buffer = CreateBuffer(path.GetRawString(), &size);
         if (!buffer)
         {
-			if (_debugMode)LAppPal::PrintLog("[APP] failed to load motion at %s", path.GetRawString());
+			if (_debugMode)LAppPal::PrintLog("[L2D] failed to load motion at %s", path.GetRawString());
 			continue;
         }
         CubismMotion* tmpMotion = static_cast<CubismMotion*>(LoadMotion(buffer, size, name.GetRawString()));
@@ -500,14 +500,14 @@ CubismMotionQueueEntryHandle LAppModel::StartMotion(const csmChar* group, csmInt
     }
     else if (!_motionManager->ReserveMotion(priority))
     {
-        if (_debugMode) LAppPal::PrintLog("[APP]can't start motion.");
+        if (_debugMode) LAppPal::PrintLog("[L2D] can't start motion.");
         return InvalidMotionQueueEntryHandleValue;
     }
 
     const csmString fileName = _modelSetting->GetMotionFileName(group, no);
 	if (fileName.GetLength() == 0)
 	{
-		if (_debugMode)LAppPal::PrintLog("[APP]can't find motion file of [%s_%d]", group, no);
+		if (_debugMode)LAppPal::PrintLog("[L2D] can't find motion file of [%s_%d]", group, no);
 		return InvalidMotionQueueEntryHandleValue;
 	}
 
@@ -526,7 +526,7 @@ CubismMotionQueueEntryHandle LAppModel::StartMotion(const csmChar* group, csmInt
         buffer = CreateBuffer(path.GetRawString(), &size);
 		if(!buffer)
 		{
-			if (_debugMode)LAppPal::PrintLog("[APP]can't create buffer for motion [%s_%d]", group, no);
+			if (_debugMode)LAppPal::PrintLog("[L2D] can't create buffer for motion [%s_%d]", group, no);
 			return InvalidMotionQueueEntryHandleValue;
 		}
         motion = static_cast<CubismMotion*>(LoadMotion(buffer, size, nullptr, onFinishedMotionHandler));
@@ -560,7 +560,7 @@ CubismMotionQueueEntryHandle LAppModel::StartMotion(const csmChar* group, csmInt
         //SimpleAudioEngine::getInstance()->playEffect(path.GetRawString());
     }
 
-    if (_debugMode)LAppPal::PrintLog("[APP]start motion: [%s_%d]", group, no);
+    if (_debugMode)LAppPal::PrintLog("[L2D] start motion: [%s_%d]", group, no);
     return  _motionManager->StartMotionPriority(motion, autoDelete, priority);
 }
 
@@ -623,7 +623,7 @@ csmBool LAppModel::HitTest(const csmChar* hitAreaName, csmFloat32 x, csmFloat32 
 csmBool LAppModel::SetExpression(const csmChar* expressionID)
 {
     ACubismMotion* motion = _expressions[expressionID];
-    if (_debugMode) LAppPal::PrintLog("[APP]expression: [%s]", expressionID);
+    if (_debugMode) LAppPal::PrintLog("[L2D] expression: [%s]", expressionID);
     if (motion != nullptr)
     {
 	    const auto h = _expressionManager->StartMotionPriority(motion, false, PriorityForce);
@@ -631,7 +631,7 @@ csmBool LAppModel::SetExpression(const csmChar* expressionID)
     }
     else
     {
-        if (_debugMode) LAppPal::PrintLog("[APP]expression[%s] is null ", expressionID);
+        if (_debugMode) LAppPal::PrintLog("[L2D] expression[%s] is null ", expressionID);
 		return false;
     }
 }
