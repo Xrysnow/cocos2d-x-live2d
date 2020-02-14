@@ -1,7 +1,6 @@
 ﻿#include "Model.h"
-#include "scripting/lua-bindings/manual/CCLuaEngine.h"
-#include "LogSystem.h"
 #include "XLive2D.h"
+#include "scripting/lua-bindings/manual/CCLuaEngine.h"
 #include "Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp"
 #include "Id/CubismIdManager.hpp"
 #include "Live2DCubismCore.h"
@@ -40,7 +39,6 @@ Model* Model::create(const std::string& dir, const std::string& fileName)
 		return ret;
 	}
 	CC_SAFE_DELETE(ret);
-	LERROR("create XLive2DModel failed");
 	return nullptr;
 }
 
@@ -59,7 +57,7 @@ bool Model::_init(const std::string& dir, const std::string& fileName)
 		d += "/";
 	if (!model->LoadAssets(d.c_str(), fileName.c_str()))
 	{
-		LERROR("cannot load model '%s' at [%s]", fileName.c_str(), d.c_str());
+		cocos2d::log("cannot load model '%s' at [%s]", fileName.c_str(), d.c_str());
 		return false;
 	}
 	_recreatListener = EventListenerCustom::create(EVENT_RENDERER_RECREATED, [&](EventCustom*)
