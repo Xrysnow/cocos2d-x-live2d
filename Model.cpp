@@ -163,7 +163,7 @@ void Model::setModelColor(const Color4B& color)
 Color4B Model::getModelColor() const
 {
 	const auto color = model->GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->GetModelColor();
-	return {color.R, color.G, color.B, color.A};
+	return { uint8_t(color.R*255.f), uint8_t(color.G*255.f), uint8_t(color.B*255.f), uint8_t(color.A*255.f) };
 }
 
 void Model::setDragging(float x, float y)
