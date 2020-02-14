@@ -1,4 +1,4 @@
-﻿#include "XLive2D.h"
+﻿#include "L2DFramework.h"
 #include "LAppDefine.hpp"
 #include "LAppPal.hpp"
 #include <Rendering/CubismRenderer.hpp>

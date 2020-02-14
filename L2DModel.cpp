@@ -1,5 +1,5 @@
-﻿#include "Model.h"
-#include "XLive2D.h"
+﻿#include "L2DModel.h"
+#include "L2DFramework.h"
 #include "scripting/lua-bindings/manual/CCLuaEngine.h"
 #include "Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp"
 #include "Id/CubismIdManager.hpp"
@@ -33,7 +33,7 @@ Model::~Model()
 Model* Model::create(const std::string& dir, const std::string& fileName)
 {
 	auto ret = new (std::nothrow) Model();
-	if (XLive2D::lazyInit() && ret && ret->_init(dir, fileName))
+	if (Framework::lazyInit() && ret && ret->_init(dir, fileName))
 	{
 		ret->autorelease();
 		return ret;

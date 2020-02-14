@@ -1,5 +1,5 @@
 #include "lua_x_L2D_auto.hpp"
-#include "Model.h"
+#include "L2DModel.h"
 #include "scripting/lua-bindings/manual/tolua_fix.h"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
 
