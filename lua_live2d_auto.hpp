@@ -1,5 +1,5 @@
-#ifndef __x_L2D_h__
-#define __x_L2D_h__
+#pragma once
+
 #include "base/ccConfig.h"
 
 #ifdef __cplusplus
@@ -10,7 +10,4 @@ extern "C" {
 }
 #endif
 
-int register_all_x_L2D(lua_State* tolua_S);
-
-
-#endif // __x_L2D_h__
+int register_all_live2d(lua_State* tolua_S);

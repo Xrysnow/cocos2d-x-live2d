@@ -1,4 +1,4 @@
-#include "lua_x_L2D_auto.hpp"
+#include "lua_live2d_auto.hpp"
 #include "L2DModel.h"
 #include "scripting/lua-bindings/manual/tolua_fix.h"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
@@ -2452,7 +2452,7 @@ int lua_register_x_L2D_Model(lua_State* tolua_S)
     g_typeCast["Model"] = "l2d.Model";
     return 1;
 }
-TOLUA_API int register_all_x_L2D(lua_State* tolua_S)
+TOLUA_API int register_all_live2d(lua_State* tolua_S)
 {
 	tolua_open(tolua_S);
 	
