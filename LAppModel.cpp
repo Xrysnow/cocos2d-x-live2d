@@ -797,7 +797,9 @@ void LAppModel::MakeRenderingTarget()
     // RenderTexture::createは描画タイミングで呼ぶとAssert扱いになるので注意すること
     if (!_renderSprite && !_renderBuffer.IsValid())
     {
-        int frameW = Director::getInstance()->getOpenGLView()->getFrameSize().width, frameH = Director::getInstance()->getOpenGLView()->getFrameSize().height;
+		const auto frameSize = Director::getInstance()->getOpenGLView()->getFrameSize();
+		int frameW = frameSize.width;
+    	int frameH = frameSize.height;
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
         // Retina対策でこっちからとる
@@ -833,10 +835,10 @@ void LAppModel::MakeRenderingTarget()
 
 void LAppModel::SetSpriteColor(float r, float g, float b, float a)
 {
-    if (_renderSprite != NULL)
+    if (_renderSprite)
     {
-        _renderSprite->getSprite()->setColor(Color3B(static_cast<GLubyte>(255.0f * r), static_cast<GLubyte>(255.0f * g), static_cast<GLubyte>(255.0f * b)));
-        _renderSprite->getSprite()->setOpacity(static_cast<GLubyte>(255.0f * a));
+        _renderSprite->getSprite()->setColor(Color3B(uint8_t(255.0f * r), uint8_t(255.0f * g), uint8_t(255.0f * b)));
+        _renderSprite->getSprite()->setOpacity(uint8_t(255.0f * a));
     }
 }
 

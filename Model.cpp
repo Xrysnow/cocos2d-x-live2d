@@ -65,7 +65,7 @@ bool Model::_init(const std::string& dir, const std::string& fileName)
 		model->ReloadRenderer();
 	});
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(_recreatListener, 2);
-	model->GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->IsPremultipliedAlpha(false);
+	model->GetRenderer<Rendering::CubismRenderer>()->IsPremultipliedAlpha(false);
 
 	const auto window = Director::getInstance()->getWinSize();
 	auto tr = Mat4::IDENTITY;
@@ -156,13 +156,13 @@ GLubyte Model::getModelOpacity() const
 
 void Model::setModelColor(const Color4B& color)
 {
-	model->GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->SetModelColor(
+	model->GetRenderer<Rendering::CubismRenderer>()->SetModelColor(
 		color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f);
 }
 
 Color4B Model::getModelColor() const
 {
-	const auto color = model->GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->GetModelColor();
+	const auto color = model->GetRenderer<Rendering::CubismRenderer>()->GetModelColor();
 	return { uint8_t(color.R*255.f), uint8_t(color.G*255.f), uint8_t(color.B*255.f), uint8_t(color.A*255.f) };
 }
 
