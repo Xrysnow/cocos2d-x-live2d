@@ -35,8 +35,8 @@ namespace l2d
 
 		void draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags) override;
 
-		void setModelOpacity(GLubyte opacity);
-		GLubyte getModelOpacity() const;
+		void setModelOpacity(uint8_t opacity);
+		uint8_t getModelOpacity() const;
 
 		void setModelColor(const cocos2d::Color4B& color);
 		cocos2d::Color4B getModelColor() const;

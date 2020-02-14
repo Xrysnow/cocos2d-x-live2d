@@ -5,7 +5,6 @@
 #include "Id/CubismIdManager.hpp"
 #include "Live2DCubismCore.h"
 
-using namespace std;
 using namespace l2d;
 using namespace cocos2d;
 using namespace Live2D::Cubism::Framework;
@@ -144,12 +143,12 @@ void Model::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
 	Widget::draw(renderer, transform, flags);
 }
 
-void Model::setModelOpacity(GLubyte opacity)
+void Model::setModelOpacity(uint8_t opacity)
 {
 	model->SetOpacity(opacity / 255.f);
 }
 
-GLubyte Model::getModelOpacity() const
+uint8_t Model::getModelOpacity() const
 {
 	return model->GetOpacity() * 255;
 }
@@ -175,8 +174,8 @@ void Model::setDragging(float x, float y)
 	//const auto yy = max(-1.f, min((y - off_y) / rect.size.height, 1.f));
 	const auto p = convertToNodeSpace(Vec2(x, y));
 	const auto sz = getContentSize() / 2;
-	const auto xx = max(-1.f, min(p.x / sz.width, 1.f));
-	const auto yy = max(-1.f, min(p.y / sz.height, 1.f));
+	const auto xx = std::max(-1.f, std::min(p.x / sz.width, 1.f));
+	const auto yy = std::max(-1.f, std::min(p.y / sz.height, 1.f));
 	model->SetDragging(xx, yy);
 }
 
