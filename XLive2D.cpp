@@ -2,34 +2,36 @@
 #include "LAppDefine.hpp"
 #include "LAppPal.hpp"
 #include <Rendering/CubismRenderer.hpp>
+#include "LAppAllocator.hpp"
 #ifdef CSM_TARGET_ANDROID_ES2
 #include <Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp>
 #endif
+#include "cocos2d.h"
 
 using namespace l2d;
 using namespace cocos2d;
-using namespace Live2D::Cubism::Framework;
+using namespace Csm;
 
-bool XLive2D::inited = false;
-bool XLive2D::initTried = false;
-EventListenerCustom* XLive2D::_recreatedEventlistener = nullptr;
-LAppAllocator                 XLive2D::_cubismAllocator;
-Csm::CubismFramework::Option  XLive2D::_cubismOption;
+static bool L2DFrameworkInited = false;
+static bool L2DFrameworkInitTried = false;
+static EventListenerCustom* L2DRecreatedListener = nullptr;
+static LAppAllocator L2DAllocator;
+static CubismFramework::Option L2DOption;
 
-bool XLive2D::lazyInit()
+bool Framework::lazyInit()
 {
-	if (inited) return true;
-	if (initTried)return false;
+	if (L2DFrameworkInited) return true;
+	if (L2DFrameworkInitTried)return false;
 	return _init();
 }
 
-bool XLive2D::_init()
+bool Framework::_init()
 {
-	initTried = true;
+	L2DFrameworkInitTried = true;
 	// prepare for Cubism Framework API.
-	_cubismOption.LogFunction = LAppPal::PrintMessage;
-	_cubismOption.LoggingLevel = LAppDefine::CubismLoggingLevel;
-	if (!Csm::CubismFramework::StartUp(&_cubismAllocator, &_cubismOption))
+	L2DOption.LogFunction = LAppPal::PrintMessage;
+	L2DOption.LoggingLevel = LAppDefine::CubismLoggingLevel;
+	if (!CubismFramework::StartUp(&L2DAllocator, &L2DOption))
 	{
 		cocos2d::log("[L2D] can't start framework");
 		return false;
@@ -42,25 +44,25 @@ bool XLive2D::_init()
 	}
 #endif
 
-	_recreatedEventlistener = EventListenerCustom::create(EVENT_RENDERER_RECREATED, [](EventCustom*)
+	L2DRecreatedListener = EventListenerCustom::create(EVENT_RENDERER_RECREATED, [](EventCustom*)
 	{
 		Rendering::CubismRenderer::StaticRelease();
 	});
-	Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(_recreatedEventlistener, -1);
+	Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(
+		L2DRecreatedListener, -1);
 
-	LINFO("CubismFramework started successfully");
-	inited = true;
+	L2DFrameworkInited = true;
 	return true;
 }
 
-bool XLive2D::end()
+bool Framework::end()
 {
-	if (!inited) return true;
-	Director::getInstance()->getEventDispatcher()->removeEventListener(_recreatedEventlistener);
-	_recreatedEventlistener = nullptr;
+	if (!L2DFrameworkInited) return true;
+	Director::getInstance()->getEventDispatcher()->removeEventListener(L2DRecreatedListener);
+	L2DRecreatedListener = nullptr;
 	CubismFramework::Dispose();
 	cocos2d::log("[L2D] framework end successfully");
-	inited = false;
-	initTried = false;
+	L2DFrameworkInited = false;
+	L2DFrameworkInitTried = false;
 	return true;
 }
