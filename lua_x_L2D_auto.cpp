@@ -2,7 +2,6 @@
 #include "Model.h"
 #include "scripting/lua-bindings/manual/tolua_fix.h"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
-#include "UtilLuaConversion.h"
 
 int lua_x_L2D_Model_setGravity(lua_State* tolua_S)
 {
@@ -1726,7 +1725,7 @@ int lua_x_L2D_Model_getDebugRectRenderer(lua_State* tolua_S)
             return 0;
         }
         cocos2d::DrawNode* ret = cobj->getDebugRectRenderer();
-        lstg::lua::native_to_luaval(tolua_S, ret);
+        object_to_luaval(tolua_S, "cc.DrawNode", ret);
         return 1;
     }
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:getDebugRectRenderer",argc, 0);
@@ -2377,7 +2376,7 @@ int lua_x_L2D_Model_create(lua_State* tolua_S)
             return 0;
         }
         l2d::Model* ret = l2d::Model::create(arg0, arg1);
-        lstg::lua::native_to_luaval(tolua_S, ret);
+		object_to_luaval(tolua_S, "l2d.Model", ret);
         return 1;
     }
     luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d\n ", "l2d.Model:create",argc, 2);
