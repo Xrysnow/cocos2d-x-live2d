@@ -1,8 +1,8 @@
 ﻿#include "L2DModel.h"
 #include "L2DFramework.h"
-#include "scripting/lua-bindings/manual/CCLuaEngine.h"
 #include "Id/CubismIdManager.hpp"
 #include "Live2DCubismCore.h"
+#include "scripting/lua-bindings/manual/CCLuaEngine.h"
 
 using namespace l2d;
 using namespace cocos2d;
@@ -26,8 +26,8 @@ Model::~Model()
 	{
 		Model::onExit();
 	}
-	if(_recreatListener)
-		Director::getInstance()->getEventDispatcher()->removeEventListener(_recreatListener);
+	if(recreatListener)
+		Director::getInstance()->getEventDispatcher()->removeEventListener(recreatListener);
 	CC_SAFE_DELETE(model);
 	instances.erase(this);
 }
@@ -59,14 +59,14 @@ bool Model::_init(const std::string& dir, const std::string& fileName)
 		d += "/";
 	if (!model->LoadAssets(d.c_str(), fileName.c_str()))
 	{
-		cocos2d::log("cannot load model '%s' at [%s]", fileName.c_str(), d.c_str());
+		cocos2d::log("can't load model '%s' at [%s]", fileName.c_str(), d.c_str());
 		return false;
 	}
-	_recreatListener = EventListenerCustom::create(EVENT_RENDERER_RECREATED, [&](EventCustom*)
+	recreatListener = EventListenerCustom::create(EVENT_RENDERER_RECREATED, [&](EventCustom*)
 	{
 		model->ReloadRenderer();
 	});
-	Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(_recreatListener, 2);
+	Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(recreatListener, 2);
 	model->GetRenderer<Rendering::CubismRenderer>()->IsPremultipliedAlpha(false);
 
 	const auto window = Director::getInstance()->getWinSize();

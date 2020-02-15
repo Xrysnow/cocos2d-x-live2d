@@ -10,7 +10,7 @@
 #include "cocos2d.h"
 
 using namespace Csm;
-USING_NS_CC;
+using namespace cocos2d;
 
 csmByte* LAppPal::LoadFileAsBytes(const csmChar* filePath, csmSizeInt* outSize)
 {
@@ -25,9 +25,9 @@ void LAppPal::ReleaseBytes(csmByte* byteData)
     free(byteData);
 }
 
-csmFloat32  LAppPal::GetDeltaTime()
+csmFloat32 LAppPal::GetDeltaTime()
 {
-    if(Director::getInstance() != NULL)
+    if(Director::getInstance())
     {
         return Director::getInstance()->getDeltaTime();
     }

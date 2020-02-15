@@ -68,8 +68,5 @@ public:
      */
     static void PrintMessage(const Csm::csmChar* message);
 
-private:
-    LAppPal();
-
 };
 

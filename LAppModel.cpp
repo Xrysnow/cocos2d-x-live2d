@@ -33,39 +33,38 @@ using namespace cocos2d;
 //TODO: audio
 
 namespace {
-csmByte* CreateBuffer(const csmChar* path, csmSizeInt* size)
-{
-    if (DebugLogEnable)LAppPal::PrintLog("[L2D] create buffer: %s ", path);
-    return LAppPal::LoadFileAsBytes(path, size);
-}
+	csmByte* CreateBuffer(const csmChar* path, csmSizeInt* size)
+	{
+		if (DebugLogEnable)LAppPal::PrintLog("[L2D] create buffer: %s ", path);
+		return LAppPal::LoadFileAsBytes(path, size);
+	}
 
-void DeleteBuffer(csmByte* buffer, const csmChar* path = "")
-{
-    if (DebugLogEnable) LAppPal::PrintLog("[L2D] delete buffer: %s", path);
-    LAppPal::ReleaseBytes(buffer);
+	void DeleteBuffer(csmByte* buffer, const csmChar* path = "")
+	{
+		if (DebugLogEnable) LAppPal::PrintLog("[L2D] delete buffer: %s", path);
+		LAppPal::ReleaseBytes(buffer);
+	}
 }
-}
-
 
 LAppModel::LAppModel()
 	: _modelSetting(nullptr), _userTimeSeconds(0.0f), _renderSprite(nullptr), _lipValue(0.0f)
 {
-    if (DebugLogEnable)
-    {
-        _debugMode = true;
-    }
+	if (DebugLogEnable)
+	{
+		_debugMode = true;
+	}
 
-    _idParamAngleX = CubismFramework::GetIdManager()->GetId(ParamAngleX);
-    _idParamAngleY = CubismFramework::GetIdManager()->GetId(ParamAngleY);
-    _idParamAngleZ = CubismFramework::GetIdManager()->GetId(ParamAngleZ);
-    _idParamBodyAngleX = CubismFramework::GetIdManager()->GetId(ParamBodyAngleX);
-    _idParamEyeBallX = CubismFramework::GetIdManager()->GetId(ParamEyeBallX);
-    _idParamEyeBallY = CubismFramework::GetIdManager()->GetId(ParamEyeBallY);
+	_idParamAngleX = CubismFramework::GetIdManager()->GetId(ParamAngleX);
+	_idParamAngleY = CubismFramework::GetIdManager()->GetId(ParamAngleY);
+	_idParamAngleZ = CubismFramework::GetIdManager()->GetId(ParamAngleZ);
+	_idParamBodyAngleX = CubismFramework::GetIdManager()->GetId(ParamBodyAngleX);
+	_idParamEyeBallX = CubismFramework::GetIdManager()->GetId(ParamEyeBallX);
+	_idParamEyeBallY = CubismFramework::GetIdManager()->GetId(ParamEyeBallY);
 
-    _clearColor[0] = 1.0f;
-    _clearColor[1] = 1.0f;
-    _clearColor[2] = 1.0f;
-    _clearColor[3] = 0.0f;
+	_clearColor[0] = 1.0f;
+	_clearColor[1] = 1.0f;
+	_clearColor[2] = 1.0f;
+	_clearColor[3] = 0.0f;
 }
 
 LAppModel::~LAppModel()
@@ -93,7 +92,7 @@ LAppModel::~LAppModel()
 	    CSM_DELETE(_modelSetting);
 	}
 
-    //cocos2d
+    // clean
 	_loadedTextures.clear();
     Director::getInstance()->getTextureCache()->removeUnusedTextures();
 }
@@ -693,7 +692,7 @@ void LAppModel::SetupTextures()
 
 void LAppModel::MotionEventFired(const csmString& eventValue)
 {
-    CubismLogInfo("%s is fired on LAppModel!!", eventValue.GetRawString());
+	if (_debugMode) LAppPal::PrintLog("%s is fired", eventValue.GetRawString());
 }
 
 const csmVector<csmRectF>& LAppModel::GetHitAreas(const Csm::CubismMatrix44& vpMatrix, const CubismVector2& windowSize)
@@ -795,8 +794,8 @@ void LAppModel::MakeRenderingTarget()
         glfwGetFramebufferSize(glimpl->getWindow(), &frameW, &frameH);
 #endif
 
-        Size visibleSize = Director::getInstance()->getVisibleSize();
-        Point origin = Director::getInstance()->getVisibleOrigin();
+		const auto visibleSize = Director::getInstance()->getVisibleSize();
+		const auto origin = Director::getInstance()->getVisibleOrigin();
 
         // レンダリングバッファの描画先をそのテクスチャにする
         const auto success = _renderBuffer.CreateOffscreenFrame(frameW, frameH);

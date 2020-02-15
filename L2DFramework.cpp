@@ -4,10 +4,10 @@
 #include "LAppAllocator.hpp"
 #include "CubismRenderer_CC.h"
 #include "L2DModel.h"
-#ifdef CSM_TARGET_ANDROID_ES2
-#include <Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp>
-#endif
 #include "cocos2d.h"
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+#include "renderer/backend/Device.h"
+#endif
 
 using namespace l2d;
 using namespace cocos2d;
@@ -38,11 +38,10 @@ bool Framework::_init()
 		return false;
 	}
 	CubismFramework::Initialize();
-#ifdef CSM_TARGET_ANDROID_ES2
-	char *exts = (char*)glGetString(GL_EXTENSIONS);
-	if (strstr(exts, "GL_NV_shader_framebuffer_fetch ")) {
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+	auto exts = (char*)backend::Device::getInstance()->getDeviceInfo()->getExtension();
+	if (strstr(exts, "GL_NV_shader_framebuffer_fetch "))
 		Rendering::CubismRenderer_CC::SetExtShaderMode(true, true);
-	}
 #endif
 
 	L2DRecreatedListener = EventListenerCustom::create(EVENT_RENDERER_RECREATED, [](EventCustom*)

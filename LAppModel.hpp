@@ -12,7 +12,7 @@
 #include <ICubismModelSetting.hpp>
 #include <Type/csmRectF.hpp>
 #include "CubismOffscreenSurface_CC.h"
-#include "cocos2d.h"
+#include "2d/CCRenderTexture.h"
 #include <vector>
 
 /**

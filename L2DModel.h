@@ -10,14 +10,13 @@ namespace l2d
 {
 	class Model : public cocos2d::ui::Widget
 	{
-	private:
-		Model();
-	public:
-		~Model();
-		static Model* create(const std::string& dir, const std::string& fileName);
 	protected:
+		Model();
+		~Model();
 		bool _init(const std::string& dir, const std::string& fileName);
 	public:
+		static Model* create(const std::string& dir, const std::string& fileName);
+
 		bool startMotion(const char* group, int32_t no, int32_t priority);
 		bool startRandomMotion(const char* group, int32_t priority);
 
@@ -50,18 +49,16 @@ namespace l2d
 		void setOnDraggingCallback(const std::function<void(float, float)>& cb) { onDraggingCallback = cb; }
 		void setOnDraggingCallback(int handler);
 
-		void setDebugRectEnable(bool b) { enableDebugRect = b; }
-
 		cocos2d::Size getCanvasSize() const;
 		cocos2d::Rect getCanvasRect() const;
 
+		void setDebugRectEnable(bool b) { enableDebugRect = b; }
 		cocos2d::DrawNode* getDebugRectRenderer() const { return debugRenderer; }
 
 	protected:
 		void onDrawModel(const cocos2d::Mat4& transform, uint32_t flags);
 		void updateHitBoxes();
 		void drawDebugRects();
-
 		bool hitTest(const cocos2d::Vec2& pt, const cocos2d::Camera* camera, cocos2d::Vec3* p) const override;
 	public:
 
@@ -96,26 +93,25 @@ namespace l2d
 
 		float getLipValue() const;
 		void setLipValue(float value);
-	private:
+
+		CC_DISALLOW_COPY_AND_ASSIGN(Model);
+	protected:
 
 		LAppModel* model = nullptr;
 		std::function<void(float, float)> onHitCallback = nullptr;
 		std::function<void(float, float)> onDraggingCallback = nullptr;
 		cocos2d::Color4F hitAreaColor = cocos2d::Color4F(1.0f, 0, 0, 0.2f);
 		cocos2d::Color4F userDataAreaColor = cocos2d::Color4F(0, 0, 1.0f, 0.2f);
-
-		cocos2d::EventListenerCustom* _recreatListener = nullptr;
-
+		cocos2d::EventListenerCustom* recreatListener = nullptr;
 		Csm::CubismMatrix44 viewForDraw;
 		std::unordered_map<std::string, cocos2d::Rect> hitBoxes;
 		cocos2d::CallbackCommand drawCommandBefore;
 		cocos2d::CallbackCommand drawCommandAfter;
 		bool enableDebugRect = false;
-
 		cocos2d::DrawNode* debugRenderer = nullptr;
 
 		static std::unordered_set<Model*> instances;
-		CC_DISALLOW_COPY_AND_ASSIGN(Model);
+
 		friend class Framework;
 	};
 }
