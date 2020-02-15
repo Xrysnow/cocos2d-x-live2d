@@ -1,7 +1,6 @@
 ﻿#include "L2DModel.h"
 #include "L2DFramework.h"
 #include "scripting/lua-bindings/manual/CCLuaEngine.h"
-#include "Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp"
 #include "Id/CubismIdManager.hpp"
 #include "Live2DCubismCore.h"
 
@@ -140,9 +139,38 @@ void Model::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
 	if (!_visible)
 		return;
 	getNodeToParentTransform();
-	_drawCommand.init(_globalZOrder);
-	_drawCommand.func = CC_CALLBACK_0(Model::onDrawModel, this, transform, flags);
-	renderer->addCommand(&_drawCommand);
+	drawCommandBefore.init(_globalZOrder);
+	drawCommandBefore.func = [=]()
+	{
+		Director::getInstance()->pushMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
+		Director::getInstance()->loadMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW, transform);
+	};
+	renderer->addCommand(&drawCommandBefore);
+
+	const auto window = Director::getInstance()->getWinSize();
+	auto tr = transform;
+	Vec3 translation;
+	tr.getTranslation(&translation);
+	tr.scale(1024 / window.width, 1024 / window.height, 0);
+	// scale to make winsize => (-1, 1)
+	tr.m[12] = translation.x / window.width * 2 - 1;
+	tr.m[13] = translation.y / window.height * 2 - 1;
+	//tr.m[14] = 0;
+
+	memcpy(viewForDraw.GetArray(), tr.m, 16 * sizeof(float));
+	updateHitBoxes();
+
+	auto viewCopy = viewForDraw;
+	model->Draw(viewCopy);
+	if (enableDebugRect)
+		drawDebugRects();
+
+	drawCommandAfter.init(_globalZOrder);
+	drawCommandAfter.func = []()
+	{
+		Director::getInstance()->popMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
+	};
+	renderer->addCommand(&drawCommandAfter);
 
 	Widget::draw(renderer, transform, flags);
 }

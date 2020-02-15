@@ -1,8 +1,8 @@
 ﻿#include "L2DFramework.h"
 #include "LAppDefine.hpp"
 #include "LAppPal.hpp"
-#include <Rendering/CubismRenderer.hpp>
 #include "LAppAllocator.hpp"
+#include "CubismRenderer_CC.h"
 #include "L2DModel.h"
 #ifdef CSM_TARGET_ANDROID_ES2
 #include <Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp>
@@ -41,7 +41,7 @@ bool Framework::_init()
 #ifdef CSM_TARGET_ANDROID_ES2
 	char *exts = (char*)glGetString(GL_EXTENSIONS);
 	if (strstr(exts, "GL_NV_shader_framebuffer_fetch ")) {
-		Rendering::CubismRenderer_OpenGLES2::SetExtShaderMode(true, true);
+		Rendering::CubismRenderer_CC::SetExtShaderMode(true, true);
 	}
 #endif
 

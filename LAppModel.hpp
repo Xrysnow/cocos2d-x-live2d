@@ -11,7 +11,7 @@
 #include <Model/CubismUserModel.hpp>
 #include <ICubismModelSetting.hpp>
 #include <Type/csmRectF.hpp>
-#include "CubismOffscreenSurface_OpenGLES2.hpp"
+#include "CubismOffscreenSurface_CC.h"
 #include "cocos2d.h"
 #include <vector>
 
@@ -205,7 +205,7 @@ private:
     const Csm::CubismId* _idParamEyeBallX;          ///< パラメータID: ParamEyeBallX
     const Csm::CubismId* _idParamEyeBallY;          ///< パラメータID: ParamEyeBallXY
 
-    Csm::Rendering::CubismOffscreenFrame_OpenGLES2  _renderBuffer;  ///< モードによってはCubismOffscreenFrameのテクスチャを描画
+    Csm::Rendering::CubismOffscreenFrame_CC  _renderBuffer;  ///< モードによってはCubismOffscreenFrameのテクスチャを描画
     cocos2d::RenderTexture* _renderSprite;          ///< _renderBufferを描画するスプライト
     float _clearColor[4];                           ///< _renderBufferをクリアする際の色
 

@@ -13,16 +13,15 @@
 #include <Motion/CubismMotion.hpp>
 #include <Physics/CubismPhysics.hpp>
 #include <CubismDefaultParameterId.hpp>
-#include <Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp>
 #include <Utils/CubismString.hpp>
 #include <Id/CubismIdManager.hpp>
 #include "Motion/CubismMotionQueueEntry.hpp"
+#include "CubismRenderer_CC.h"
 
 //cocos2d
 #include "base/CCDirector.h"
 #include "renderer/CCTexture2D.h"
 #include "renderer/CCTextureCache.h"
-#include "renderer/backend/opengl/TextureGL.h"
 
 using namespace std;
 using namespace Csm;
@@ -49,7 +48,7 @@ void DeleteBuffer(csmByte* buffer, const csmChar* path = "")
 
 
 LAppModel::LAppModel()
-	: _modelSetting(nullptr) , _userTimeSeconds(0.0f), _lipValue(0.0f)
+	: _modelSetting(nullptr), _userTimeSeconds(0.0f), _renderSprite(nullptr), _lipValue(0.0f)
 {
     if (DebugLogEnable)
     {
@@ -78,12 +77,7 @@ LAppModel::~LAppModel()
 		else
 			LAppPal::PrintLog("[L2D] delete model");
 	}
-    if (_renderSprite)
-    {
-        // Cocos本体が消滅した後ではこの呼び出しが出来ないことに注意
-        _renderSprite->removeFromParentAndCleanup(true);
-        _renderSprite = NULL;
-    }
+	// _renderSprite is owned by _renderBuffer
     _renderBuffer.DestroyOffscreenFrame();
 
     ReleaseMotions();
@@ -581,7 +575,7 @@ void LAppModel::DoDraw()
 {
     if (_model == nullptr)return;
 
-    GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->DrawModel();
+    GetRenderer<Rendering::CubismRenderer>()->DrawModel();
 }
 
 void LAppModel::Draw(CubismMatrix44& matrix)
@@ -596,7 +590,7 @@ void LAppModel::Draw(CubismMatrix44& matrix)
 
     matrix.MultiplyByMatrix(_modelMatrix);
 
-    GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->SetMvpMatrix(&matrix);
+    GetRenderer<Rendering::CubismRenderer>()->SetMvpMatrix(&matrix);
 
     DoDraw();
 
@@ -684,10 +678,8 @@ void LAppModel::SetupTextures()
         // テクスチャが読めていなければバインド処理をスキップ
         if(!texture) continue;
 
-		auto tex = (backend::Texture2DGL*)texture->getBackendTexture();
-        const csmInt32 glTextueNumber = tex->getHandler();
         const Texture2D::TexParams texParams = {
-        	backend::SamplerFilter::LINEAR_MIPMAP_LINEAR,
+        	backend::SamplerFilter::LINEAR,
         	backend::SamplerFilter::LINEAR,
 			backend::SamplerAddressMode::CLAMP_TO_EDGE,
 			backend::SamplerAddressMode::CLAMP_TO_EDGE };
@@ -695,12 +687,8 @@ void LAppModel::SetupTextures()
         texture->generateMipmap();
 		_loadedTextures.pushBack(texture);
 
-        //OpenGL
-        GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->BindTexture(modelTextureNumber, glTextueNumber);
+        GetRenderer<Rendering::CubismRenderer_CC>()->BindTexture(modelTextureNumber, texture);
     }
-
-    GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->IsPremultipliedAlpha(true);
-
 }
 
 void LAppModel::MotionEventFired(const csmString& eventValue)
@@ -810,26 +798,16 @@ void LAppModel::MakeRenderingTarget()
         Size visibleSize = Director::getInstance()->getVisibleSize();
         Point origin = Director::getInstance()->getVisibleOrigin();
 
-        _renderSprite = RenderTexture::create(visibleSize.width, visibleSize.height);
-        _renderSprite->setPosition(Point(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
-        _renderSprite->getSprite()->getTexture()->setAntiAliasTexParameters();
-        _renderSprite->getSprite()->setBlendFunc(BlendFunc::ALPHA_NON_PREMULTIPLIED);
-        _renderSprite->getSprite()->setOpacityModifyRGB(false);
-        // サンプルシーンへ登録
-        //SampleScene::getInstance()->addChild(_renderSprite);
-        _renderSprite->setVisible(true);
-
-        // _renderSpriteのテクスチャを作成する
-        GLuint colorBuf = ((backend::Texture2DGL*)_renderSprite->getSprite()->getTexture()->getBackendTexture())->getHandler();
-		_renderSprite->getSprite()->getTexture()->setTexParameters({
-			backend::SamplerFilter::LINEAR,
-			backend::SamplerFilter::LINEAR,
-			backend::SamplerAddressMode::CLAMP_TO_EDGE,
-			backend::SamplerAddressMode::CLAMP_TO_EDGE });
-		//TODO: size is (frameW, frameH)?
-        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frameW, frameH, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
         // レンダリングバッファの描画先をそのテクスチャにする
-        _renderBuffer.CreateOffscreenFrame(frameW, frameH, colorBuf);
+        const auto success = _renderBuffer.CreateOffscreenFrame(frameW, frameH);
+		if (success)
+		{
+			_renderSprite = _renderBuffer.GetOffscreenFrame();
+			_renderSprite->setPosition(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y);
+			_renderSprite->getSprite()->getTexture()->setAntiAliasTexParameters();
+			_renderSprite->getSprite()->setBlendFunc(BlendFunc::ALPHA_NON_PREMULTIPLIED);
+			_renderSprite->getSprite()->setOpacityModifyRGB(false);
+		}
     }
 }
 

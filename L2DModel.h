@@ -108,13 +108,14 @@ namespace l2d
 
 		Csm::CubismMatrix44 viewForDraw;
 		std::unordered_map<std::string, cocos2d::Rect> hitBoxes;
-
-		cocos2d::CallbackCommand _drawCommand;
+		cocos2d::CallbackCommand drawCommandBefore;
+		cocos2d::CallbackCommand drawCommandAfter;
 		bool enableDebugRect = false;
 
 		cocos2d::DrawNode* debugRenderer = nullptr;
 
 		static std::unordered_set<Model*> instances;
 		CC_DISALLOW_COPY_AND_ASSIGN(Model);
+		friend class Framework;
 	};
 }
