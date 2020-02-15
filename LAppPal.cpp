@@ -46,5 +46,8 @@ void LAppPal::PrintLog(const csmChar* format, ...)
 
 void LAppPal::PrintMessage(const csmChar* message)
 {
-    PrintLog("%s", message);
+	std::string s = message;
+	if (s.back() == '\n')
+		s.pop_back();
+	PrintLog("%s", s.c_str());
 }
