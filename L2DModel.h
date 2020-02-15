@@ -1,9 +1,10 @@
 ﻿#pragma once
-#include "cocos2d.h"
 #include "LAppModel.hpp"
 #include <CubismFramework.hpp>
 #include <Math/CubismMatrix44.hpp>
+#include "cocos2d.h"
 #include "ui/UIWidget.h"
+#include <unordered_set>
 
 namespace l2d
 {
@@ -113,6 +114,7 @@ namespace l2d
 
 		cocos2d::DrawNode* debugRenderer = nullptr;
 
+		static std::unordered_set<Model*> instances;
 		CC_DISALLOW_COPY_AND_ASSIGN(Model);
 	};
 }

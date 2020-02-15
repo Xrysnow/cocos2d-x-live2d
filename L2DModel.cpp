@@ -9,6 +9,8 @@ using namespace l2d;
 using namespace cocos2d;
 using namespace Live2D::Cubism::Framework;
 
+std::unordered_set<Model*> Model::instances;
+
 CubismIdHandle csm_id(const std::string& str)
 {
 	return CubismFramework::GetIdManager()->GetId(str.c_str());
@@ -16,6 +18,7 @@ CubismIdHandle csm_id(const std::string& str)
 
 Model::Model()
 {
+	instances.insert(this);
 }
 
 Model::~Model()
@@ -27,6 +30,7 @@ Model::~Model()
 	if(_recreatListener)
 		Director::getInstance()->getEventDispatcher()->removeEventListener(_recreatListener);
 	CC_SAFE_DELETE(model);
+	instances.erase(this);
 }
 
 Model* Model::create(const std::string& dir, const std::string& fileName)

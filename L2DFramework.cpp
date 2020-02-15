@@ -3,6 +3,7 @@
 #include "LAppPal.hpp"
 #include <Rendering/CubismRenderer.hpp>
 #include "LAppAllocator.hpp"
+#include "L2DModel.h"
 #ifdef CSM_TARGET_ANDROID_ES2
 #include <Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp>
 #endif
@@ -60,6 +61,13 @@ bool Framework::end()
 	if (!L2DFrameworkInited) return true;
 	Director::getInstance()->getEventDispatcher()->removeEventListener(L2DRecreatedListener);
 	L2DRecreatedListener = nullptr;
+	// make a copy to avoid erase in iter
+	const auto instances = Model::instances;
+	for (auto& m : instances)
+		m->removeFromParentAndCleanup(true);
+	CC_ASSERT(Model::instances.empty());
+	Model::instances.clear();
+	// note: all models should be destructed before this
 	CubismFramework::Dispose();
 	cocos2d::log("[L2D] framework end successfully");
 	L2DFrameworkInited = false;
