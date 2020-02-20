@@ -104,7 +104,7 @@ namespace Live2D { namespace Cubism {namespace Framework { namespace Rendering {
 			, csmFloat32* uvArray, csmFloat32 opacity
 			, CubismRenderer::CubismBlendMode colorBlendMode
 			, const CubismRenderer::CubismTextureColor& baseColor
-			, csmBool isPremultipliedAlpha, CubismMatrix44 matrix4x4
+			, csmBool isPremultipliedAlpha, CubismMatrix44& matrix4x4
 			, csmBool invertedMask);
 		void ReleaseShaderProgram();
 		void GenerateShaders();
@@ -197,12 +197,13 @@ namespace Live2D { namespace Cubism {namespace Framework { namespace Rendering {
 		cocos2d::Renderer* ccr = nullptr;
 		std::vector<std::shared_ptr<cocos2d::RenderCommand>> cmds;
 		cocos2d::Map<csmInt32, cocos2d::Texture2D*> _textures;
-		csmVector<csmInt32>          _sortedDrawableIndexList;
-		CubismRendererProfile_CC     _rendererProfile;
-		CubismClippingManager_CC*    _clippingManager;
-		CubismClippingContext_CC*    _clippingContextBufferForMask;
-		CubismClippingContext_CC*    _clippingContextBufferForDraw;
-		CubismOffscreenFrame_CC      _offscreenFrameBuffer;
+		csmVector<csmInt32>        _sortedDrawableIndexList;
+		CubismRendererProfile_CC   _rendererProfile;
+		CubismClippingManager_CC*  _clippingManager;
+		CubismClippingContext_CC*  _clippingContextBufferForMask;
+		CubismClippingContext_CC*  _clippingContextBufferForDraw;
+		CubismMatrix44             _mvpMatrix;
+		CubismOffscreenFrame_CC    _offscreenFrameBuffer;
 		cocos2d::backend::CullMode _lastCullMode;
 	};
 

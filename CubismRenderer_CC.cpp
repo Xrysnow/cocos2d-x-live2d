@@ -1232,7 +1232,7 @@ void CubismShader_CC::SetupShaderProgram(CubismRenderer_CC* renderer
 	, csmFloat32* uvArray, csmFloat32 opacity
 	, CubismRenderer::CubismBlendMode colorBlendMode
 	, const CubismRenderer::CubismTextureColor& baseColor
-	, csmBool isPremultipliedAlpha, CubismMatrix44 matrix4x4
+	, csmBool isPremultipliedAlpha, CubismMatrix44& matrix4x4
 	, csmBool invertedMask)
 {
 	if (_shaderSets.GetSize() == 0)
@@ -1472,6 +1472,7 @@ void CubismRenderer_CC::PreDraw()
 			// not supported
 		}
 	}
+	_mvpMatrix = GetMvpMatrix();
 }
 
 void CubismRenderer_CC::DoDrawModel()
@@ -1669,7 +1670,7 @@ void CubismRenderer_CC::DrawMesh(csmInt32 textureNo, csmInt32 indexCount, csmInt
 	CubismShader_CC::GetInstance()->SetupShaderProgram(
 		this, &cmd->getPipelineDescriptor(), drawTexture, vertexCount, vertexArray, uvArray
 		, opacity, colorBlendMode, modelColorRGBA, IsPremultipliedAlpha()
-		, GetMvpMatrix(), invertedMask
+		, _mvpMatrix, invertedMask
 	);
 
 	// ポリゴンメッシュを描画する
