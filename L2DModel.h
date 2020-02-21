@@ -57,7 +57,6 @@ namespace l2d
 		cocos2d::DrawNode* getDebugRectRenderer() const { return debugRenderer; }
 
 	protected:
-		void onDrawModel(const cocos2d::Mat4& transform, uint32_t flags);
 		void updateHitBoxes();
 		void drawDebugRects();
 		bool hitTest(const cocos2d::Vec2& pt, const cocos2d::Camera* camera, cocos2d::Vec3* p) const override;

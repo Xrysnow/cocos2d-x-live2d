@@ -199,11 +199,6 @@ Color4B Model::getModelColor() const
 
 void Model::setDragging(float x, float y)
 {
-	//const auto rect = getCanvasRect();
-	//const auto off_x = rect.getMidX();
-	//const auto off_y = rect.getMidY();
-	//const auto xx = max(-1.f, min((x - off_x) / rect.size.width, 1.f));
-	//const auto yy = max(-1.f, min((y - off_y) / rect.size.height, 1.f));
 	const auto p = convertToNodeSpace(Vec2(x, y));
 	const auto sz = getContentSize() / 2;
 	const auto xx = std::max(-1.f, std::min(p.x / sz.width, 1.f));
@@ -248,35 +243,6 @@ void Model::setOnDraggingCallback(int handler)
 Size Model::getCanvasSize() const
 {
 	return { model->GetModel()->GetCanvasWidth(),model->GetModel()->GetCanvasHeight() };
-}
-
-void Model::onDrawModel(const Mat4& transform, uint32_t flags)
-{
-	auto director = Director::getInstance();
-	director->pushMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
-	director->loadMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW, transform);
-
-	const auto window = director->getWinSize();
-	auto tr = transform;
-	Vec3 translation;
-	tr.getTranslation(&translation);
-	tr.scale(1024 / window.width, 1024 / window.height, 0);
-	// scale to make winsize => (-1, 1)
-	tr.m[12] = translation.x / window.width * 2 - 1;
-	tr.m[13] = translation.y / window.height * 2 - 1;
-	//tr.m[14] = 0;
-
-	memcpy(viewForDraw.GetArray(), tr.m, 16 * sizeof(float));
-	updateHitBoxes();
-
-	auto viewCopy = viewForDraw;
-	model->Draw(viewCopy);
-	if (enableDebugRect)
-	{
-		drawDebugRects();
-	}
-
-	director->popMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
 }
 
 void Model::updateHitBoxes()
