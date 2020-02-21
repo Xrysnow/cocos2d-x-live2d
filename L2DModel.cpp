@@ -8,6 +8,9 @@ using namespace l2d;
 using namespace cocos2d;
 using namespace Live2D::Cubism::Framework;
 
+constexpr float CubismCanvasSize = 1024.f;
+constexpr float CubismCanvasScale = CubismCanvasSize / 2;
+static CubismMatrix44 CubismMatrixIdentity = {};
 std::unordered_set<Model*> Model::instances;
 
 CubismIdHandle csm_id(const std::string& str)
@@ -69,21 +72,26 @@ bool Model::_init(const std::string& dir, const std::string& fileName)
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(recreatListener, 2);
 	model->GetRenderer<Rendering::CubismRenderer>()->IsPremultipliedAlpha(false);
 
-	const auto window = Director::getInstance()->getWinSize();
-	auto tr = Mat4::IDENTITY;
-	Vec3 translation;
-	tr.getTranslation(&translation);
-	tr.scale(1024 / window.width, 1024 / window.height, 0);
-	// scale to make winsize => (-1, 1)
-	tr.m[12] = translation.x / window.width * 2 - 1;
-	tr.m[13] = translation.y / window.height * 2 - 1;
-	//tr.m[14] = 0;
-	memcpy(viewForDraw.GetArray(), tr.m, 16 * sizeof(float));
+	// the full canvas size is 1024*1024, correspond to vertex position range (-1,-1) to (1,1)
+	// the canvas size of model is in vertex coord
+
+	const auto w = model->GetModel()->GetCanvasWidth();
+	const auto h = model->GetModel()->GetCanvasHeight();
+	canvasSize.width = w * CubismCanvasScale;
+	canvasSize.height = h * CubismCanvasScale;
+
+	Mat4 trans;
+	Mat4::createTranslation(w / 2, h / 2, 0.f, &trans);
+	Mat4 scale;
+	Mat4::createScale(CubismCanvasScale, CubismCanvasScale, 1.f, &scale);
+	constTransform = scale * trans;
+
+	debugRenderer->setPosition(canvasSize.width / 2, canvasSize.height / 2);
+	debugRenderer->setScale(CubismCanvasScale);
+
 	updateHitBoxes();
 
-	setIgnoreAnchorPointForPosition(true);
-	setAnchorPoint(Vec2::ANCHOR_MIDDLE);
-	setContentSize(getCanvasRect().size);
+	setContentSize(canvasSize);
 	return true;
 }
 
@@ -102,7 +110,8 @@ bool Model::areaHitTest(const char* hitAreaName, float x, float y)
 	const auto it = hitBoxes.find(hitAreaName);
 	if (it != hitBoxes.end())
 	{
-		return it->second.containsPoint(convertToNodeSpace(Vec2(x, y)));
+		const auto p = convertToNodeSpace(Vec2(x, y));
+		return it->second.containsPoint((p - canvasSize / 2) / CubismCanvasScale);
 	}
 	return false;
 }
@@ -139,23 +148,9 @@ void Model::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
 	if (!_visible)
 		return;
 	getNodeToParentTransform();
-	drawCommandBefore.init(_globalZOrder);
-	drawCommandBefore.func = [=]()
-	{
-		Director::getInstance()->pushMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
-		Director::getInstance()->loadMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW, transform);
-	};
-	renderer->addCommand(&drawCommandBefore);
 
-	const auto window = Director::getInstance()->getWinSize();
-	auto tr = transform;
-	Vec3 translation;
-	tr.getTranslation(&translation);
-	tr.scale(1024 / window.width, 1024 / window.height, 0);
-	// scale to make winsize => (-1, 1)
-	tr.m[12] = translation.x / window.width * 2 - 1;
-	tr.m[13] = translation.y / window.height * 2 - 1;
-	//tr.m[14] = 0;
+	const auto& proj = Director::getInstance()->getMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);
+	auto tr = proj * transform * constTransform;
 
 	memcpy(viewForDraw.GetArray(), tr.m, 16 * sizeof(float));
 	updateHitBoxes();
@@ -164,13 +159,6 @@ void Model::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
 	model->Draw(viewCopy);
 	if (enableDebugRect)
 		drawDebugRects();
-
-	drawCommandAfter.init(_globalZOrder);
-	drawCommandAfter.func = []()
-	{
-		Director::getInstance()->popMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
-	};
-	renderer->addCommand(&drawCommandAfter);
 
 	Widget::draw(renderer, transform, flags);
 }
@@ -199,11 +187,11 @@ Color4B Model::getModelColor() const
 
 void Model::setDragging(float x, float y)
 {
-	const auto p = convertToNodeSpace(Vec2(x, y));
-	const auto sz = getContentSize() / 2;
-	const auto xx = std::max(-1.f, std::min(p.x / sz.width, 1.f));
-	const auto yy = std::max(-1.f, std::min(p.y / sz.height, 1.f));
-	model->SetDragging(xx, yy);
+	auto p = convertToNodeSpace(Vec2(x, y));
+	p.x = p.x / canvasSize.width * 2 - 1;
+	p.y = p.y / canvasSize.height * 2 - 1;
+	p.clamp(-Vec2::ONE, Vec2::ONE);
+	model->SetDragging(p.x, p.y);
 }
 
 void Model::resetDragging()
@@ -242,86 +230,67 @@ void Model::setOnDraggingCallback(int handler)
 
 Size Model::getCanvasSize() const
 {
-	return { model->GetModel()->GetCanvasWidth(),model->GetModel()->GetCanvasHeight() };
+	return canvasSize;
 }
 
 void Model::updateHitBoxes()
 {
-	const auto window = Director::getInstance()->getWinSize();
-	const auto scale_x = window.width / getScaleX()*0.5;
-	const auto scale_y = window.height / getScaleY()*0.5;
 	auto setting = model->GetModelSetting();
 	for (auto i = 0; i < setting->GetHitAreasCount(); i++)
 	{
 		const auto id = setting->GetHitAreaId(i);
 		const auto name = setting->GetHitAreaName(i);
 		const auto area = model->GetDrawableArea(
-			model->GetModel()->GetDrawableIndex(id), viewForDraw, CubismVector2(2, 2));
-		auto rect = Rect(area.X - 1, area.Y - 1, area.Width, area.Height);
-		rect.origin.x *= scale_x;
-		rect.origin.y *= scale_y;
-		rect.size.width *= scale_x;
-		rect.size.height *= scale_y;
-		hitBoxes[name] = rect;
+			model->GetModel()->GetDrawableIndex(id), CubismMatrixIdentity, CubismVector2(2, 2));
+		hitBoxes[name] = { area.X - 1, area.Y - 1, area.Width, area.Height };
 	}
 }
 
 Rect Model::getCanvasRect() const
 {
-	const auto window = Director::getInstance()->getWinSize();
-	const auto scale_x = window.width / getScaleX()*0.5;
-	const auto scale_y = window.height / getScaleY()*0.5;
-	CubismMatrix44 currentMatrix(viewForDraw);
-	currentMatrix.MultiplyByMatrix(model->GetModelMatrix());
-	const auto size = getCanvasSize();
-	const float right = size.width / 2;
-	const float left = -right;
-	const float bottom = size.height / 2;
-	const float top = -bottom;
-	const auto arr = currentMatrix.GetArray();
-	const auto convertLeft = (left * arr[0] + top * arr[1]) * scale_x;
-	const auto convertTop = (left * arr[4] + top * arr[5]) * scale_y;
-	const auto convertRight = (right * arr[0] + bottom * arr[1]) * scale_x;
-	const auto convertBottom = (right * arr[4] + bottom * arr[5]) * scale_y;
-	// origin is left-bottom
-	return Rect(std::min(convertLeft, convertRight), std::min(convertBottom, convertTop),
-		std::abs(convertRight - convertLeft), std::abs(convertTop - convertBottom));
+	const auto w = canvasSize.width;
+	const auto h = canvasSize.height;
+	return { -w / 2,-h / 2,w,h };
 }
 
 void Model::drawDebugRects()
 {
 	debugRenderer->clear();
-	const auto window = Director::getInstance()->getWinSize();
-	const auto scale_x = window.width / getScaleX()*0.5;
-	const auto scale_y = window.height / getScaleY()*0.5;
-	//TODO: verify userDataAreas rects
-	const auto& userDataAreas = model->GetUserDataAreas(viewForDraw, CubismVector2(2, 2));
+	// draw user data areas
+	const auto& userDataAreas = model->GetUserDataAreas(CubismMatrixIdentity, CubismVector2(2, 2));
 	for (auto j = 0U; j < userDataAreas.GetSize(); ++j)
 	{
 		const auto area = userDataAreas[j];
 		auto rect = Rect(area.X - 1, area.Y - 1, area.Width, area.Height);
-		rect.origin.x *= scale_x;
-		rect.origin.y *= scale_y;
-		rect.size.width *= scale_x;
-		rect.size.height *= scale_y;
 		debugRenderer->drawSolidRect(rect.origin, rect.origin + rect.size, userDataAreaColor);
 	}
-
+	// draw hit boxes
 	for (const auto& it : hitBoxes)
 	{
 		const auto rect = it.second;
 		debugRenderer->drawSolidRect(rect.origin, rect.origin + rect.size, hitAreaColor);
 	}
-	const auto riv = getCanvasRect();
-	debugRenderer->drawSolidRect(riv.origin, riv.origin + riv.size, Color4F(1.0f, 1.0f, 1.0f, 0.2f));
+	// draw model canvas
+	const auto halfSize = Vec2(canvasSize / (CubismCanvasScale * 2));
+	debugRenderer->drawSolidRect(-halfSize, halfSize, Color4F(1.0f, 1.0f, 1.0f, 0.2f));
+	// draw full canvas
+	//debugRenderer->drawSolidRect(-Vec2::ONE, Vec2::ONE, Color4F(1.0f, 0.0f, 0.0f, 0.2f));
 }
 
-bool Model::hitTest(const cocos2d::Vec2& pt, const cocos2d::Camera* camera, cocos2d::Vec3* p) const
+bool Model::hitTest(const Vec2& pt, const Camera* camera, Vec3* p) const
 {
-	const auto size = getContentSize();
-	const auto anch = getAnchorPoint();
-	return isScreenPointInRect(pt, camera, getWorldToNodeTransform(),
-		{ -size.width * anch.x, -size.height * anch.y, size.width, size.height }, nullptr);
+#if 0
+	// only test hit boxes
+	auto local = convertToNodeSpace(pt);
+	local = (local - canvasSize / 2) / CubismCanvasScale;
+	for (auto& it : hitBoxes)
+	{
+		if (it.second.containsPoint(local))
+			return true;
+	}
+#else
+	return Widget::hitTest(pt, camera, p);
+#endif
 }
 
 int32_t Model::getParameterCount() const
