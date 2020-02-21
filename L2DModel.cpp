@@ -211,6 +211,11 @@ void Model::setDragging(float x, float y)
 	model->SetDragging(xx, yy);
 }
 
+void Model::resetDragging()
+{
+	model->SetDragging(0, 0);
+}
+
 void Model::setAcceleration(float x, float y, float z)
 {
 	model->SetAcceleration(x, y, z);

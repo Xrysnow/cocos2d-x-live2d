@@ -158,6 +158,53 @@ int lua_x_L2D_Model_setOnDraggingCallback(lua_State* tolua_S)
 
     return 0;
 }
+int lua_x_L2D_Model_resetDragging(lua_State* tolua_S)
+{
+    int argc = 0;
+    l2d::Model* cobj = nullptr;
+    bool ok  = true;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_Error tolua_err;
+#endif
+
+
+#if COCOS2D_DEBUG >= 1
+    if (!tolua_isusertype(tolua_S,1,"l2d.Model",0,&tolua_err)) goto tolua_lerror;
+#endif
+
+    cobj = (l2d::Model*)tolua_tousertype(tolua_S,1,0);
+
+#if COCOS2D_DEBUG >= 1
+    if (!cobj) 
+    {
+        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_x_L2D_Model_resetDragging'", nullptr);
+        return 0;
+    }
+#endif
+
+    argc = lua_gettop(tolua_S)-1;
+    if (argc == 0) 
+    {
+        if(!ok)
+        {
+            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_resetDragging'", nullptr);
+            return 0;
+        }
+        cobj->resetDragging();
+        lua_settop(tolua_S, 1);
+        return 1;
+    }
+    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:resetDragging",argc, 0);
+    return 0;
+
+#if COCOS2D_DEBUG >= 1
+    tolua_lerror:
+    tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_resetDragging'.",&tolua_err);
+#endif
+
+    return 0;
+}
 int lua_x_L2D_Model_getParameterValue(lua_State* tolua_S)
 {
     int argc = 0;
@@ -2402,6 +2449,7 @@ int lua_register_x_L2D_Model(lua_State* tolua_S)
         tolua_function(tolua_S,"setGravity",lua_x_L2D_Model_setGravity);
         tolua_function(tolua_S,"setAcceleration",lua_x_L2D_Model_setAcceleration);
         tolua_function(tolua_S,"setOnDraggingCallback",lua_x_L2D_Model_setOnDraggingCallback);
+        tolua_function(tolua_S,"resetDragging",lua_x_L2D_Model_resetDragging);
         tolua_function(tolua_S,"getParameterValue",lua_x_L2D_Model_getParameterValue);
         tolua_function(tolua_S,"getDrawableCount",lua_x_L2D_Model_getDrawableCount);
         tolua_function(tolua_S,"getDrawableOpacity",lua_x_L2D_Model_getDrawableOpacity);

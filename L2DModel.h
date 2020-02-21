@@ -42,6 +42,7 @@ namespace l2d
 		cocos2d::Color4B getModelColor() const;
 
 		void setDragging(float x, float y);
+		void resetDragging();
 		void setAcceleration(float x, float y, float z);
 
 		void setOnHitCallback(const std::function<void(float, float)>& cb) { onHitCallback = cb; }
