@@ -24,9 +24,9 @@ namespace l2d
 		bool setExpression(const char* expressionID);
 		bool setRandomExpression();
 
-		std::vector<std::string> getMotionNames() const { return model->GetMotionNames(); } // group_no
-		std::vector<std::string> getExpressionNames() const { return model->GetExpressionNames(); }
-		std::vector<std::string> getMotionGroupNames() const { return model->GetMotionGroupNames(); }
+		std::vector<std::string> getMotionNames() const; // group_no
+		std::vector<std::string> getExpressionNames() const;
+		std::vector<std::string> getMotionGroupNames() const;
 
 		void onEnter() override;
 		void onExit() override;
@@ -47,8 +47,8 @@ namespace l2d
 
 		cocos2d::Size getCanvasSize() const;
 
-		void setDebugRectEnable(bool b) { enableDebugRect = b; }
-		cocos2d::DrawNode* getDebugRectRenderer() const { return debugRenderer; }
+		void setDebugRectEnable(bool b);
+		cocos2d::DrawNode* getDebugRectRenderer() const;
 
 	protected:
 		void updateHitBoxes();

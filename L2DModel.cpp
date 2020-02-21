@@ -126,6 +126,21 @@ bool Model::setRandomExpression()
 	return model->SetRandomExpression();
 }
 
+std::vector<std::string> Model::getMotionNames() const
+{
+	return model->GetMotionNames();
+}
+
+std::vector<std::string> Model::getExpressionNames() const
+{
+	return model->GetExpressionNames();
+}
+
+std::vector<std::string> Model::getMotionGroupNames() const
+{
+	return model->GetMotionGroupNames();
+}
+
 void Model::onEnter()
 {
 	Widget::onEnter();
@@ -220,6 +235,16 @@ void Model::updateHitBoxes()
 			model->GetModel()->GetDrawableIndex(id), CubismMatrixIdentity, CubismVector2(2, 2));
 		hitBoxes[name] = { area.X - 1, area.Y - 1, area.Width, area.Height };
 	}
+}
+
+void Model::setDebugRectEnable(bool b)
+{
+	enableDebugRect = b;
+}
+
+DrawNode* Model::getDebugRectRenderer() const
+{
+	return debugRenderer;
 }
 
 void Model::drawDebugRects()
