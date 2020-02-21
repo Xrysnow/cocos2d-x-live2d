@@ -213,9 +213,9 @@ private:
 	Csm::csmFloat32 _lipValue;
 public:
 
-	std::vector<std::string> GetMotionNames() const; // group_no
-	std::vector<std::string> GetExpressionNames() const;
-	std::vector<std::string> GetMotionGroupNames() const;
+	std::string GetHomeDir() const { return _modelHomeDir.GetRawString(); }
+	Csm::csmMap<Csm::csmString, Csm::ACubismMotion*>& GetMotions() { return _motions; }
+	Csm::csmMap<Csm::csmString, Csm::ACubismMotion*>& GetExpressions() { return _expressions; }
 	Csm::ICubismModelSetting* GetModelSetting() const { return _modelSetting; }
 	Csm::CubismPhysics* GetPhysics() const { return _physics; }
 	Csm::CubismEyeBlink* GetEyeBlink() const { return _eyeBlink; }
@@ -223,5 +223,6 @@ public:
 
 	Csm::csmFloat32 GetLipValue() const { return _lipValue; }
 	void SetLipValue(Csm::csmFloat32 value) { _lipValue = value; }
+
 };
 

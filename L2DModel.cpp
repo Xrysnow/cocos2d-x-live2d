@@ -74,7 +74,6 @@ bool Model::_init(const std::string& dir, const std::string& fileName)
 
 	// the full canvas size is 1024*1024, correspond to vertex position range (-1,-1) to (1,1)
 	// the canvas size of model is in vertex coord
-
 	const auto w = model->GetModel()->GetCanvasWidth();
 	const auto h = model->GetModel()->GetCanvasHeight();
 	canvasSize.width = w * CubismCanvasScale;
@@ -85,24 +84,104 @@ bool Model::_init(const std::string& dir, const std::string& fileName)
 	Mat4 scale;
 	Mat4::createScale(CubismCanvasScale, CubismCanvasScale, 1.f, &scale);
 	constTransform = scale * trans;
-
 	debugRenderer->setPosition(canvasSize.width / 2, canvasSize.height / 2);
 	debugRenderer->setScale(CubismCanvasScale);
-
 	updateHitBoxes();
-
 	setContentSize(canvasSize);
+
+	loadModelInfo();
 	return true;
 }
 
-bool Model::startMotion(const char* group, int32_t no, int32_t priority)
+void Model::loadModelInfo()
 {
-	return model->StartMotion(group, no, priority) != InvalidMotionQueueEntryHandleValue;
+	homeDir = model->GetHomeDir();
+	auto& motions = model->GetMotions();
+	auto setting = model->GetModelSetting();
+	for (auto i = 0; i < setting->GetMotionGroupCount(); i++)
+	{
+		MotionGroupInfo ginfo;
+		const auto groupNmae = setting->GetMotionGroupName(i);
+		const auto count = setting->GetMotionCount(groupNmae);
+		std::vector<MotionInfo> motionInfos;
+		for (auto j = 0; j < count; j++)
+		{
+			MotionInfo info;
+			const auto name = StringUtils::format("%s_%d", groupNmae, i);
+			info.name = name;
+			info.fileName = setting->GetMotionFileName(groupNmae, j);
+			auto motion = motions[name.c_str()];
+			if (motion)
+			{
+				info.duration = motion->GetDuration();
+				info.loopDuration = motion->GetLoopDuration();
+				info.fadeInTime = motion->GetFadeInTime();
+				info.fadeOutTime = motion->GetFadeOutTime();
+				info.weight = motion->GetWeight();
+			}
+			info.soundFileName = setting->GetMotionSoundFileName(groupNmae, i);
+			ginfo.motionInfos.push_back(info);
+		}
+		ginfo.name = groupNmae;
+		motionGroupInfo[ginfo.name] = ginfo;
+	}
+	auto& expressions = model->GetExpressions();
+	for (auto it = expressions.Begin(); it != expressions.End(); ++it)
+	{
+		expressionNames.push_back(it->First.GetRawString());
+	}
 }
 
-bool Model::startRandomMotion(const char* group, int32_t priority)
+Size Model::getCanvasSize() const
 {
-	return model->StartRandomMotion(group, priority) != InvalidMotionQueueEntryHandleValue;
+	return canvasSize;
+}
+
+std::string Model::getDirectory() const
+{
+	return homeDir;
+}
+
+std::vector<std::string> Model::getMotionGroupNames() const
+{
+	std::vector<std::string> ret;
+	for (auto& it : motionGroupInfo)
+		ret.push_back(it.first);
+	return ret;
+}
+
+size_t Model::getMotionCount(const std::string& groupName)
+{
+	const auto it = motionGroupInfo.find(groupName);
+	if (it != motionGroupInfo.end())
+		return it->second.motionInfos.size();
+	return 0;
+}
+
+std::vector<std::string> Model::getExpressionNames() const
+{
+	return expressionNames;
+}
+
+std::string Model::getSoundFileName(const std::string& groupName, int32_t index)
+{
+	const auto it = motionGroupInfo.find(groupName);
+	if (it != motionGroupInfo.end())
+	{
+		if (0 <= index && index < it->second.motionInfos.size())
+			return it->second.motionInfos[index].soundFileName;
+	}
+	return {};
+}
+
+bool Model::startMotion(const char* groupName, int32_t index, int32_t priority)
+{
+	return model->StartMotion(groupName, index, priority) != InvalidMotionQueueEntryHandleValue;
+}
+
+bool Model::startRandomMotion(const char* groupName, int32_t priority)
+{
+	return model->StartRandomMotion(groupName, priority) != InvalidMotionQueueEntryHandleValue;
 }
 
 bool Model::areaHitTest(const char* hitAreaName, float x, float y)
@@ -116,9 +195,9 @@ bool Model::areaHitTest(const char* hitAreaName, float x, float y)
 	return false;
 }
 
-bool Model::setExpression(const char* expressionID)
+bool Model::setExpression(const char* expressionName)
 {
-	return model->SetExpression(expressionID);
+	return model->SetExpression(expressionName);
 }
 
 bool Model::setRandomExpression()
@@ -126,56 +205,65 @@ bool Model::setRandomExpression()
 	return model->SetRandomExpression();
 }
 
-std::vector<std::string> Model::getMotionNames() const
+void Model::setAutoDragging(bool b)
 {
-	return model->GetMotionNames();
+	if (b)
+	{
+		if(!autoDraggingCallback)
+		{
+			autoDraggingCallback = [=](Ref*, TouchEventType e)
+			{
+				switch (e)
+				{
+				case TouchEventType::BEGAN: break;
+				case TouchEventType::MOVED:
+					{
+						const auto p = getTouchMovePosition();
+						setTouchDragging(p.x, p.y);
+					}
+					break;
+				case TouchEventType::ENDED:
+				case TouchEventType::CANCELED:
+					resetDragging();
+					break;
+				default: ;
+				}
+			};
+		}
+		if (!autoDragging)
+			addTouchEventListener(autoDraggingCallback);
+	}
+	else
+	{
+		// only remove when enabled
+		if (autoDragging)
+			addTouchEventListener(nullptr);
+	}
+	autoDragging = b;
 }
 
-std::vector<std::string> Model::getExpressionNames() const
+void Model::setDragging(float x, float y)
 {
-	return model->GetExpressionNames();
+	model->SetDragging(x, y);
 }
 
-std::vector<std::string> Model::getMotionGroupNames() const
+void Model::setTouchDragging(float x, float y)
 {
-	return model->GetMotionGroupNames();
+	auto p = convertToNodeSpace(Vec2(x, y));
+	p.x = p.x / canvasSize.width * 2 - 1;
+	p.y = p.y / canvasSize.height * 2 - 1;
+	p.clamp(-Vec2::ONE, Vec2::ONE);
+	model->SetDragging(p.x, p.y);
 }
 
-void Model::onEnter()
+void Model::resetDragging()
 {
-	Widget::onEnter();
-	model->Update();
+	model->SetDragging(0, 0);
 }
 
-void Model::onExit()
+void Model::setAcceleration(float x, float y, float z)
 {
-	Widget::onExit();
-}
-
-void Model::update(float delta)
-{
-	Widget::update(delta);
-	model->Update();
-}
-
-void Model::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
-{
-	if (!_visible)
-		return;
-	getNodeToParentTransform();
-
-	const auto& proj = Director::getInstance()->getMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);
-	auto tr = proj * transform * constTransform;
-
-	memcpy(viewForDraw.GetArray(), tr.m, 16 * sizeof(float));
-	updateHitBoxes();
-
-	auto viewCopy = viewForDraw;
-	model->Draw(viewCopy);
-	if (enableDebugRect)
-		drawDebugRects();
-
-	Widget::draw(renderer, transform, flags);
+	model->SetAcceleration(x, y, z);
 }
 
 void Model::setModelOpacity(uint8_t opacity)
@@ -200,28 +288,41 @@ Color4B Model::getModelColor() const
 	return { uint8_t(color.R*255.f), uint8_t(color.G*255.f), uint8_t(color.B*255.f), uint8_t(color.A*255.f) };
 }
 
-void Model::setDragging(float x, float y)
+void Model::update(float delta)
 {
-	auto p = convertToNodeSpace(Vec2(x, y));
-	p.x = p.x / canvasSize.width * 2 - 1;
-	p.y = p.y / canvasSize.height * 2 - 1;
-	p.clamp(-Vec2::ONE, Vec2::ONE);
-	model->SetDragging(p.x, p.y);
+	Widget::update(delta);
+	model->Update();
 }
 
-void Model::resetDragging()
+void Model::onEnter()
 {
-	model->SetDragging(0, 0);
+	Widget::onEnter();
+	model->Update();
 }
 
-void Model::setAcceleration(float x, float y, float z)
+void Model::onExit()
 {
-	model->SetAcceleration(x, y, z);
+	Widget::onExit();
 }
 
-Size Model::getCanvasSize() const
+void Model::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
 {
-	return canvasSize;
+	if (!_visible)
+		return;
+	getNodeToParentTransform();
+
+	const auto& proj = Director::getInstance()->getMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);
+	auto tr = proj * transform * constTransform;
+
+	memcpy(viewForDraw.GetArray(), tr.m, 16 * sizeof(float));
+	updateHitBoxes();
+
+	auto viewCopy = viewForDraw;
+	model->Draw(viewCopy);
+	if (enableDebugRect)
+		drawDebugRects();
+
+	Widget::draw(renderer, transform, flags);
 }
 
 void Model::updateHitBoxes()

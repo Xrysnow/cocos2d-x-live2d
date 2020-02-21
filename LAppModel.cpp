@@ -818,36 +818,3 @@ void LAppModel::SetSpriteColor(float r, float g, float b, float a)
         _renderSprite->getSprite()->setOpacity(uint8_t(255.0f * a));
     }
 }
-
-std::vector<std::string> LAppModel::GetMotionNames() const
-{
-	std::vector<std::string> ret;
-	for (auto it = _motions.Begin(); it != _motions.End(); ++it)
-	{
-		ret.emplace_back(it->First.GetRawString());
-	}
-	return ret;
-}
-
-std::vector<std::string> LAppModel::GetExpressionNames() const
-{
-	std::vector<std::string> ret;
-	for (auto it = _expressions.Begin(); it != _expressions.End(); ++it)
-	{
-		ret.emplace_back(it->First.GetRawString());
-	}
-	return ret;
-}
-
-std::vector<std::string> LAppModel::GetMotionGroupNames() const
-{
-	std::vector<std::string> ret;
-	if (_modelSetting)
-	{
-		for (csmInt32 i = 0; i < _modelSetting->GetMotionGroupCount(); i++)
-		{
-			ret.emplace_back(_modelSetting->GetMotionGroupName(i));
-		}
-	}
-	return ret;
-}
