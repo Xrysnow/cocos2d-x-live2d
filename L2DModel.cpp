@@ -222,13 +222,6 @@ void Model::updateHitBoxes()
 	}
 }
 
-Rect Model::getCanvasRect() const
-{
-	const auto w = canvasSize.width;
-	const auto h = canvasSize.height;
-	return { -w / 2,-h / 2,w,h };
-}
-
 void Model::drawDebugRects()
 {
 	debugRenderer->clear();

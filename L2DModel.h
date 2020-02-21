@@ -46,7 +46,6 @@ namespace l2d
 		void setAcceleration(float x, float y, float z);
 
 		cocos2d::Size getCanvasSize() const;
-		cocos2d::Rect getCanvasRect() const;
 
 		void setDebugRectEnable(bool b) { enableDebugRect = b; }
 		cocos2d::DrawNode* getDebugRectRenderer() const { return debugRenderer; }
