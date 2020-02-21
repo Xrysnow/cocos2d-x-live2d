@@ -45,11 +45,6 @@ namespace l2d
 		void resetDragging();
 		void setAcceleration(float x, float y, float z);
 
-		void setOnHitCallback(const std::function<void(float, float)>& cb) { onHitCallback = cb; }
-		void setOnHitCallback(int handler);
-		void setOnDraggingCallback(const std::function<void(float, float)>& cb) { onDraggingCallback = cb; }
-		void setOnDraggingCallback(int handler);
-
 		cocos2d::Size getCanvasSize() const;
 		cocos2d::Rect getCanvasRect() const;
 
@@ -98,8 +93,6 @@ namespace l2d
 	protected:
 
 		LAppModel* model = nullptr;
-		std::function<void(float, float)> onHitCallback = nullptr;
-		std::function<void(float, float)> onDraggingCallback = nullptr;
 		cocos2d::Color4F hitAreaColor = cocos2d::Color4F(1.0f, 0, 0, 0.2f);
 		cocos2d::Color4F userDataAreaColor = cocos2d::Color4F(0, 0, 1.0f, 0.2f);
 		cocos2d::EventListenerCustom* recreatListener = nullptr;

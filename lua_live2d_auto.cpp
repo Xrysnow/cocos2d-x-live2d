@@ -109,55 +109,6 @@ int lua_x_L2D_Model_setAcceleration(lua_State* tolua_S)
 
     return 0;
 }
-int lua_x_L2D_Model_setOnDraggingCallback(lua_State* tolua_S)
-{
-    int argc = 0;
-    l2d::Model* cobj = nullptr;
-    bool ok  = true;
-
-#if COCOS2D_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-
-#if COCOS2D_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"l2d.Model",0,&tolua_err)) goto tolua_lerror;
-#endif
-
-    cobj = (l2d::Model*)tolua_tousertype(tolua_S,1,0);
-
-#if COCOS2D_DEBUG >= 1
-    if (!cobj) 
-    {
-        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_x_L2D_Model_setOnDraggingCallback'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(tolua_S)-1;
-    if (argc == 1) 
-    {
-        int arg0;
-		arg0 = toluafix_ref_function(tolua_S, 2, 0);
-        if(!arg0)
-        {
-            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_setOnDraggingCallback'", nullptr);
-            return 0;
-        }
-        cobj->setOnDraggingCallback(arg0);
-        lua_settop(tolua_S, 1);
-        return 1;
-    }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:setOnDraggingCallback",argc, 1);
-    return 0;
-
-#if COCOS2D_DEBUG >= 1
-    tolua_lerror:
-    tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_setOnDraggingCallback'.",&tolua_err);
-#endif
-
-    return 0;
-}
 int lua_x_L2D_Model_resetDragging(lua_State* tolua_S)
 {
     int argc = 0;
@@ -798,55 +749,6 @@ int lua_x_L2D_Model_getDrawableNames(lua_State* tolua_S)
 #if COCOS2D_DEBUG >= 1
     tolua_lerror:
     tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_getDrawableNames'.",&tolua_err);
-#endif
-
-    return 0;
-}
-int lua_x_L2D_Model_setOnHitCallback(lua_State* tolua_S)
-{
-    int argc = 0;
-    l2d::Model* cobj = nullptr;
-    bool ok  = true;
-
-#if COCOS2D_DEBUG >= 1
-    tolua_Error tolua_err;
-#endif
-
-
-#if COCOS2D_DEBUG >= 1
-    if (!tolua_isusertype(tolua_S,1,"l2d.Model",0,&tolua_err)) goto tolua_lerror;
-#endif
-
-    cobj = (l2d::Model*)tolua_tousertype(tolua_S,1,0);
-
-#if COCOS2D_DEBUG >= 1
-    if (!cobj) 
-    {
-        tolua_error(tolua_S,"invalid 'cobj' in function 'lua_x_L2D_Model_setOnHitCallback'", nullptr);
-        return 0;
-    }
-#endif
-
-    argc = lua_gettop(tolua_S)-1;
-    if (argc == 1) 
-    {
-        int arg0;
-		arg0 = toluafix_ref_function(tolua_S, 2, 0);
-        if(!arg0)
-        {
-            tolua_error(tolua_S,"invalid arguments in function 'lua_x_L2D_Model_setOnHitCallback'", nullptr);
-            return 0;
-        }
-        cobj->setOnHitCallback(arg0);
-        lua_settop(tolua_S, 1);
-        return 1;
-    }
-    luaL_error(tolua_S, "%s has wrong number of arguments: %d, was expecting %d \n", "l2d.Model:setOnHitCallback",argc, 1);
-    return 0;
-
-#if COCOS2D_DEBUG >= 1
-    tolua_lerror:
-    tolua_error(tolua_S,"#ferror in function 'lua_x_L2D_Model_setOnHitCallback'.",&tolua_err);
 #endif
 
     return 0;
@@ -2448,7 +2350,6 @@ int lua_register_x_L2D_Model(lua_State* tolua_S)
     tolua_beginmodule(tolua_S,"Model");
         tolua_function(tolua_S,"setGravity",lua_x_L2D_Model_setGravity);
         tolua_function(tolua_S,"setAcceleration",lua_x_L2D_Model_setAcceleration);
-        tolua_function(tolua_S,"setOnDraggingCallback",lua_x_L2D_Model_setOnDraggingCallback);
         tolua_function(tolua_S,"resetDragging",lua_x_L2D_Model_resetDragging);
         tolua_function(tolua_S,"getParameterValue",lua_x_L2D_Model_getParameterValue);
         tolua_function(tolua_S,"getDrawableCount",lua_x_L2D_Model_getDrawableCount);
@@ -2462,7 +2363,6 @@ int lua_register_x_L2D_Model(lua_State* tolua_S)
         tolua_function(tolua_S,"getWind",lua_x_L2D_Model_getWind);
         tolua_function(tolua_S,"getModelOpacity",lua_x_L2D_Model_getModelOpacity);
         tolua_function(tolua_S,"getDrawableNames",lua_x_L2D_Model_getDrawableNames);
-        tolua_function(tolua_S,"setOnHitCallback",lua_x_L2D_Model_setOnHitCallback);
         tolua_function(tolua_S,"setWind",lua_x_L2D_Model_setWind);
         tolua_function(tolua_S,"getMotionGroupNames",lua_x_L2D_Model_getMotionGroupNames);
         tolua_function(tolua_S,"getParameterMinimumValue",lua_x_L2D_Model_getParameterMinimumValue);

@@ -204,30 +204,6 @@ void Model::setAcceleration(float x, float y, float z)
 	model->SetAcceleration(x, y, z);
 }
 
-void Model::setOnHitCallback(int handler)
-{
-	onHitCallback = [=](float x,float y)
-	{
-		auto stack = LuaEngine::getInstance()->getLuaStack();
-		stack->pushFloat(x);
-		stack->pushFloat(y);
-		stack->executeFunctionByHandler(handler, 2);
-		stack->clean();
-	};
-}
-
-void Model::setOnDraggingCallback(int handler)
-{
-	onDraggingCallback = [=](float x, float y)
-	{
-		auto stack = LuaEngine::getInstance()->getLuaStack();
-		stack->pushFloat(x);
-		stack->pushFloat(y);
-		stack->executeFunctionByHandler(handler, 2);
-		stack->clean();
-	};
-}
-
 Size Model::getCanvasSize() const
 {
 	return canvasSize;
