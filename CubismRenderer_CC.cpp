@@ -1425,6 +1425,11 @@ CubismRenderer_CC::CubismRenderer_CC()
 CubismRenderer_CC::~CubismRenderer_CC()
 {
 	CSM_DELETE_SELF(CubismClippingManager_CC, _clippingManager);
+
+	if (_offscreenFrameBuffer.IsValid())
+	{
+		_offscreenFrameBuffer.DestroyOffscreenFrame();
+	}
 }
 
 void CubismRenderer_CC::DoStaticRelease()
