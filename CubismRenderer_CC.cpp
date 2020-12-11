@@ -1416,7 +1416,7 @@ CubismRenderer_CC::CubismRenderer_CC()
 	// テクスチャ対応マップの容量を確保しておく.
 	_textures.reserve(32);
 	ccr = Director::getInstance()->getRenderer();
-#ifdef CSM_DEBU
+#ifdef CSM_DEBUG
 	// make sure default texture is created
 	Sprite::create();
 #endif
@@ -1645,7 +1645,7 @@ void CubismRenderer_CC::DrawMesh(csmInt32 textureNo, csmInt32 indexCount, csmInt
 
 	// シェーダに渡すテクスチャID
 	Texture2D* drawTexture;
-#ifdef CSM_DEBU
+#ifdef CSM_DEBUG
 	// テクスチャマップからバインド済みテクスチャIDを取得
 	// バインドされていなければダミーのテクスチャIDをセットする
 	if (it != _textures.end())
