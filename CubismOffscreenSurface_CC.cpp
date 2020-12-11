@@ -43,7 +43,7 @@ void CubismOffscreenFrame_CC::Clear(float r, float g, float b, float a)
 {
 	if (!IsValid())
 		return;
-	ccr->clear(ClearFlag::COLOR, { r,g,b,a }, 0, 0, 0);
+	ccr->clear(ClearFlag::COLOR, { r,g,b,a }, 1, 0, 0);
 }
 
 csmBool CubismOffscreenFrame_CC::CreateOffscreenFrame(
