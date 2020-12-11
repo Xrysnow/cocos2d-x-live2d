@@ -12,7 +12,7 @@ namespace l2d
 	{
 	protected:
 		Model();
-		~Model();
+		virtual ~Model();
 		bool _init(const std::string& dir, const std::string& fileName);
 		void loadModelInfo();
 	public:
