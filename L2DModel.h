@@ -110,7 +110,12 @@ namespace l2d
 		float getLipValue() const;
 		void setLipValue(float value);
 
-		CC_DISALLOW_COPY_AND_ASSIGN(Model);
+		// sound
+
+		void setSoundEventHandler(const LAppModel::SoundEventHandler& f);
+
+		Model(const Model&) = delete;
+		Model& operator =(const Model&) = delete;
 	protected:
 
 		int32_t getDrawableIndex(const std::string& name) const;

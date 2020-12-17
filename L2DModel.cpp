@@ -616,6 +616,11 @@ void Model::setLipValue(float value)
 	model->SetLipValue(value);
 }
 
+void Model::setSoundEventHandler(const LAppModel::SoundEventHandler& f)
+{
+	model->SetSoundEventHandler(f);
+}
+
 int32_t Model::getDrawableIndex(const std::string& name) const
 {
 	return model->GetModel()->GetDrawableIndex(csm_id(name));
