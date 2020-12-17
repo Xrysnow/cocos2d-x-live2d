@@ -16,6 +16,10 @@ namespace l2d
 		bool _init(const std::string& dir, const std::string& fileName);
 		void loadModelInfo();
 	public:
+		/**
+		 * Create live2d model from directory and file name.
+		 * Default size and anchor are correspond to the canvas.
+		 */
 		static Model* create(const std::string& dir, const std::string& fileName);
 
 		// info
