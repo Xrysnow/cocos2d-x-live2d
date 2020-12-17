@@ -143,6 +143,16 @@ Size Model::getCanvasSize() const
 	return canvasSizePixel;
 }
 
+Vec2 Model::getCanvasOrigin() const
+{
+	return originPixel;
+}
+
+float Model::getPixelsPerUnit() const
+{
+	return pixelsPerUnit;
+}
+
 std::string Model::getDirectory() const
 {
 	return homeDir;

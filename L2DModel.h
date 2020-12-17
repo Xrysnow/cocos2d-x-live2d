@@ -25,6 +25,8 @@ namespace l2d
 		// info
 
 		cocos2d::Size getCanvasSize() const;
+		cocos2d::Vec2 getCanvasOrigin() const;
+		float getPixelsPerUnit() const;
 		std::string getDirectory() const;
 		std::vector<std::string> getMotionGroupNames() const;
 		size_t getMotionCount(const std::string& groupName);
