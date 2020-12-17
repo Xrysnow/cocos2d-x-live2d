@@ -550,12 +550,12 @@ void Model::setWind(const Vec2& wind)
 	}
 }
 
-void Model::setBlinkingInterval(float blinkigInterval)
+void Model::setBlinkingInterval(float seconds)
 {
 	auto blk = model->GetEyeBlink();
 	if (blk)
 	{
-		blk->SetBlinkingInterval(blinkigInterval);
+		blk->SetBlinkingInterval(seconds);
 	}
 }
 

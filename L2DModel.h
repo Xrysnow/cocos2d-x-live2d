@@ -99,7 +99,7 @@ namespace l2d
 
 		// blinking, lip
 
-		void setBlinkingInterval(float blinkigInterval);// in seconds
+		void setBlinkingInterval(float seconds);
 		void setBlinkingSettings(float closing, float closed, float opening);
 		float getLipValue() const;
 		void setLipValue(float value);
