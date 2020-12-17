@@ -136,6 +136,25 @@ void Model::loadModelInfo()
 	{
 		expressionNames.emplace_back(it->First.GetRawString());
 	}
+
+	const auto m = model->GetModel()->GetModel();
+	const auto partIds = csmGetPartIds(m);
+	const auto partCount = csmGetPartCount(m);
+	partNames.reserve(partCount);
+	for (auto i = 0; i < partCount; ++i)
+		partNames.emplace_back(partIds[i]);
+	const auto partParentIds = csmGetPartParentPartIndices(m);
+	if (partParentIds)
+	{
+		for (auto i = 0; i < partCount; ++i)
+			partParents.push_back(partParentIds[i]);
+	}
+
+	const auto drawableIds = csmGetDrawableIds(m);
+	const auto drawableCount = csmGetDrawableCount(m);
+	drawableNames.reserve(drawableCount);
+	for (auto i = 0; i < drawableCount; ++i)
+		drawableNames.emplace_back(drawableIds[i]);
 }
 
 Size Model::getCanvasSize() const
@@ -467,14 +486,12 @@ int32_t Model::getPartCount() const
 
 std::vector<std::string> Model::getPartNames() const
 {
-	const auto m = model->GetModel()->GetModel();
-	const auto partIds = csmGetPartIds(m);
-	const auto partCount = csmGetPartCount(m);
-	std::vector<std::string> ret;
-	ret.reserve(partCount);
-	for (auto i = 0; i < partCount; ++i)
-		ret.emplace_back(partIds[i]);
-	return ret;
+	return partNames;
+}
+
+std::vector<int> Model::getPartParents() const
+{
+	return partParents;
 }
 
 float Model::getPartOpacity(const std::string& name) const
@@ -494,14 +511,7 @@ int32_t Model::getDrawableCount() const
 
 std::vector<std::string> Model::getDrawableNames() const
 {
-	const auto m = model->GetModel()->GetModel();
-	const auto drawableIds = csmGetDrawableIds(m);
-	const auto drawableCount = csmGetDrawableCount(m);
-	std::vector<std::string> ret;
-	ret.reserve(drawableCount);
-	for (auto i = 0; i < drawableCount; ++i)
-		ret.emplace_back(drawableIds[i]);
-	return ret;
+	return drawableNames;
 }
 
 float Model::getDrawableOpacity(const std::string& name) const

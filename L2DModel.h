@@ -81,6 +81,7 @@ namespace l2d
 
 		int32_t getPartCount() const;
 		std::vector<std::string> getPartNames() const;
+		std::vector<int> getPartParents() const;
 		float getPartOpacity(const std::string& name) const;
 		void setPartOpacity(const std::string& name, float opacity);
 
@@ -132,6 +133,9 @@ namespace l2d
 		};
 		std::unordered_map<std::string, MotionGroupInfo> motionGroupInfo;
 		std::vector<std::string> expressionNames;
+		std::vector<std::string> drawableNames;
+		std::vector<std::string> partNames;
+		std::vector<int> partParents;
 
 		cocos2d::Color4F hitAreaColor = cocos2d::Color4F(1.0f, 0, 0, 0.2f);
 		cocos2d::Color4F userDataAreaColor = cocos2d::Color4F(0, 0, 1.0f, 0.2f);
