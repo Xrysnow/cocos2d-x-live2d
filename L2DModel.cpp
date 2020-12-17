@@ -405,41 +405,41 @@ std::vector<std::string> Model::getParameterNames() const
 	return ret;
 }
 
-float Model::getParameterMaximumValue(const std::string& name) const
+float Model::getParameterMax(const std::string& name) const
 {
 	auto m = model->GetModel();
 	return m->GetParameterMaximumValue(m->GetParameterIndex(csm_id(name)));
 }
 
-float Model::getParameterMinimumValue(const std::string& name) const
+float Model::getParameterMin(const std::string& name) const
 {
 	auto m = model->GetModel();
 	return m->GetParameterMinimumValue(m->GetParameterIndex(csm_id(name)));
 }
 
-float Model::getParameterDefaultValue(const std::string& name) const
+float Model::getParameterDefault(const std::string& name) const
 {
 	auto m = model->GetModel();
 	return m->GetParameterDefaultValue(m->GetParameterIndex(csm_id(name)));
 }
 
-float Model::getParameterValue(const std::string& name) const
+float Model::getParameter(const std::string& name) const
 {
 	auto m = model->GetModel();
 	return m->GetParameterValue(m->GetParameterIndex(csm_id(name)));
 }
 
-void Model::setParameterValue(const std::string& name, float value, float weight)
+void Model::setParameter(const std::string& name, float value, float weight)
 {
 	model->GetModel()->SetParameterValue(csm_id(name), value, weight);
 }
 
-void Model::addParameterValue(const std::string& name, float value, float weight)
+void Model::addParameter(const std::string& name, float value, float weight)
 {
 	model->GetModel()->AddParameterValue(csm_id(name), value, weight);
 }
 
-void Model::multiplyParameterValue(const std::string& name, float value, float weight)
+void Model::multiplyParameter(const std::string& name, float value, float weight)
 {
 	model->GetModel()->MultiplyParameterValue(csm_id(name), value, weight);
 }

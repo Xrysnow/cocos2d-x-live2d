@@ -67,13 +67,13 @@ namespace l2d
 
 		int32_t getParameterCount() const;
 		std::vector<std::string> getParameterNames() const;
-		float getParameterMaximumValue(const std::string& name) const;
-		float getParameterMinimumValue(const std::string& name) const;
-		float getParameterDefaultValue(const std::string& name) const;
-		float getParameterValue(const std::string& name) const;
-		void  setParameterValue(const std::string& name, float value, float weight = 1.0f);
-		void  addParameterValue(const std::string& name, float value, float weight = 1.0f);
-		void  multiplyParameterValue(const std::string& name, float value, float weight = 1.0f);
+		float getParameterMax(const std::string& name) const;
+		float getParameterMin(const std::string& name) const;
+		float getParameterDefault(const std::string& name) const;
+		float getParameter(const std::string& name) const;
+		void setParameter(const std::string& name, float value, float weight = 1.0f);
+		void addParameter(const std::string& name, float value, float weight = 1.0f);
+		void multiplyParameter(const std::string& name, float value, float weight = 1.0f);
 
 		// part
 
