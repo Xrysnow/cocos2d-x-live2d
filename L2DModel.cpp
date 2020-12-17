@@ -45,6 +45,11 @@ Model* Model::create(const std::string& dir, const std::string& fileName)
 	return nullptr;
 }
 
+uint32_t Model::getMocVersion() const
+{
+	return model->GetMocVersion();
+}
+
 bool Model::_init(const std::string& dir, const std::string& fileName)
 {
 	if (!Widget::init()) return false;

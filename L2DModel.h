@@ -24,6 +24,7 @@ namespace l2d
 
 		// info
 
+		uint32_t getMocVersion() const;
 		cocos2d::Size getCanvasSize() const;
 		cocos2d::Vec2 getCanvasOrigin() const;
 		float getPixelsPerUnit() const;
