@@ -107,6 +107,8 @@ namespace l2d
 		CC_DISALLOW_COPY_AND_ASSIGN(Model);
 	protected:
 
+		int32_t getDrawableIndex(const std::string& name) const;
+
 		LAppModel* model = nullptr;
 		std::string homeDir;
 

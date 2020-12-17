@@ -490,20 +490,17 @@ std::vector<std::string> Model::getDrawableNames() const
 
 float Model::getDrawableOpacity(const std::string& name) const
 {
-	auto m = model->GetModel();
-	return m->GetDrawableOpacity(m->GetDrawableIndex(csm_id(name)));
+	return model->GetModel()->GetDrawableOpacity(getDrawableIndex(name));
 }
 
 int32_t Model::getDrawableCulling(const std::string& name) const
 {
-	auto m = model->GetModel();
-	return m->GetDrawableCulling(m->GetDrawableIndex(csm_id(name)));
+	return model->GetModel()->GetDrawableCulling(getDrawableIndex(name));
 }
 
 int32_t Model::getDrawableBlendMode(const std::string& name) const
 {
-	auto m = model->GetModel();
-	return m->GetDrawableBlendMode(m->GetDrawableIndex(csm_id(name)));
+	return (int32_t)model->GetModel()->GetDrawableBlendMode(getDrawableIndex(name));
 }
 
 Vec2 Model::getGravity() const
@@ -576,4 +573,9 @@ float Model::getLipValue() const
 void Model::setLipValue(float value)
 {
 	model->SetLipValue(value);
+}
+
+int32_t Model::getDrawableIndex(const std::string& name) const
+{
+	return model->GetModel()->GetDrawableIndex(csm_id(name));
 }
