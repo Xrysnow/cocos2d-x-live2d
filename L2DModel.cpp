@@ -128,7 +128,7 @@ void Model::loadModelInfo()
 	auto& expressions = model->GetExpressions();
 	for (auto it = expressions.Begin(); it != expressions.End(); ++it)
 	{
-		expressionNames.push_back(it->First.GetRawString());
+		expressionNames.emplace_back(it->First.GetRawString());
 	}
 }
 
