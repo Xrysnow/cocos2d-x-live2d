@@ -146,6 +146,7 @@ void LAppModel::SetupModel(ICubismModelSetting* setting)
         buffer = CreateBuffer(path.GetRawString(), &size);
 		if (buffer)
 		{
+			_mocVersion = Live2D::Cubism::Core::csmGetMocVersion(buffer, size);
 	        LoadModel(buffer, size);
 	        DeleteBuffer(buffer, path.GetRawString());
 		}
@@ -342,13 +343,11 @@ void LAppModel::PreloadMotionGroup(const csmChar* group)
 
         DeleteBuffer(buffer, path.GetRawString());
 
-        csmString voice = _modelSetting->GetMotionSoundFileName(group, i);
-        if (strcmp(voice.GetRawString(), "") != 0)
+        std::string voice = _modelSetting->GetMotionSoundFileName(group, i);
+        if (!voice.empty())
         {
-            csmString path_ = voice;
-            path_ = _modelHomeDir + path_;
-
-            //SimpleAudioEngine::getInstance()->preloadEffect(path.GetRawString());
+            if (_soundHandler)
+                _soundHandler(voice, SoundEventType::Load);
         }
     }
 }
@@ -358,14 +357,12 @@ void LAppModel::ReleaseMotionGroup(const csmChar* group) const
     const csmInt32 count = _modelSetting->GetMotionCount(group);
     for (csmInt32 i = 0; i < count; i++)
     {
-        csmString voice = _modelSetting->GetMotionSoundFileName(group, i);
-        if (strcmp(voice.GetRawString(), "") != 0)
+        std::string voice = _modelSetting->GetMotionSoundFileName(group, i);
+        if (!voice.empty())
         {
-            csmString path = voice;
-            path = _modelHomeDir + path;
-
-            //SimpleAudioEngine::getInstance()->unloadEffect(path.GetRawString());
-		}
+            if (_soundHandler)
+                _soundHandler(voice, SoundEventType::Unload);
+        }
     }
 }
 
@@ -546,12 +543,11 @@ CubismMotionQueueEntryHandle LAppModel::StartMotion(const csmChar* group, csmInt
     }
 
     //voice
-    csmString voice = _modelSetting->GetMotionSoundFileName(group, no);
-    if (strcmp(voice.GetRawString(), "") != 0)
+    const std::string voice = _modelSetting->GetMotionSoundFileName(group, no);
+    if (!voice.empty())
     {
-        csmString path = voice;
-        path = _modelHomeDir + path;
-        //SimpleAudioEngine::getInstance()->playEffect(path.GetRawString());
+        if (_soundHandler)
+            _soundHandler(voice, SoundEventType::Play);
     }
 
     if (_debugMode)LAppPal::PrintLog("[L2D] start motion: [%s_%d]", group, no);

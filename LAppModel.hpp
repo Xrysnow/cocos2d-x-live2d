@@ -209,8 +209,6 @@ private:
     cocos2d::RenderTexture* _renderSprite;          ///< _renderBufferを描画するスプライト
     float _clearColor[4];                           ///< _renderBufferをクリアする際の色
 
-	cocos2d::Vector<cocos2d::Texture2D*> _loadedTextures;
-	Csm::csmFloat32 _lipValue;
 public:
 
 	std::string GetHomeDir() const { return _modelHomeDir.GetRawString(); }
@@ -223,6 +221,25 @@ public:
 
 	Csm::csmFloat32 GetLipValue() const { return _lipValue; }
 	void SetLipValue(Csm::csmFloat32 value) { _lipValue = value; }
+	Csm::csmBool GetLipSync() const { return _lipSync; }
+	void SetLipSync(Csm::csmBool value) { _lipSync = value; }
 
+    unsigned int GetMocVersion() const { return _mocVersion; }
+
+    enum class SoundEventType
+	{
+		Load,
+		Unload,
+		Play
+	};
+    using SoundEventHandler = std::function<void(const std::string&, SoundEventType)>;
+    void SetSoundEventHandler(const SoundEventHandler& f) { _soundHandler = f; }
+
+private:
+	
+    SoundEventHandler _soundHandler;
+	cocos2d::Vector<cocos2d::Texture2D*> _loadedTextures;
+	Csm::csmFloat32 _lipValue;
+    unsigned int _mocVersion = 0;
 };
 
