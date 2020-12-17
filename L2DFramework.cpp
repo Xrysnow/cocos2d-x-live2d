@@ -12,6 +12,7 @@
 using namespace l2d;
 using namespace cocos2d;
 using namespace Csm;
+using namespace Live2D::Cubism::Core;
 
 static bool L2DFrameworkInited = false;
 static bool L2DFrameworkInitTried = false;
@@ -72,4 +73,14 @@ bool Framework::end()
 	L2DFrameworkInited = false;
 	L2DFrameworkInitTried = false;
 	return true;
+}
+
+unsigned int Framework::getVersion()
+{
+	return csmGetVersion();
+}
+
+unsigned int Framework::getLatestMocVersion()
+{
+	return csmGetLatestMocVersion();
 }
