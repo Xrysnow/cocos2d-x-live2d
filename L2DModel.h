@@ -105,6 +105,8 @@ namespace l2d
 
 		void setBlinkingInterval(float seconds);
 		void setBlinkingSettings(float closing, float closed, float opening);
+		bool getLipSync() const;
+		void setLipSync(bool value);
 		float getLipValue() const;
 		void setLipValue(float value);
 

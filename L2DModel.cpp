@@ -596,6 +596,16 @@ void Model::setBlinkingSettings(float closing, float closed, float opening)
 	}
 }
 
+bool Model::getLipSync() const
+{
+	return model->GetLipSync();
+}
+
+void Model::setLipSync(bool value)
+{
+	model->SetLipSync(value);
+}
+
 float Model::getLipValue() const
 {
 	return model->GetLipValue();
