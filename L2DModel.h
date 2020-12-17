@@ -134,7 +134,9 @@ namespace l2d
 		cocos2d::Color4F hitAreaColor = cocos2d::Color4F(1.0f, 0, 0, 0.2f);
 		cocos2d::Color4F userDataAreaColor = cocos2d::Color4F(0, 0, 1.0f, 0.2f);
 		cocos2d::EventListenerCustom* recreatListener = nullptr;
-		cocos2d::Size canvasSize;
+		cocos2d::Size canvasSizePixel;
+		cocos2d::Vec2 originPixel;
+		float pixelsPerUnit = -1.0f;
 		cocos2d::Mat4 constTransform;
 		Csm::CubismMatrix44 viewForDraw;
 		std::unordered_map<std::string, cocos2d::Rect> hitBoxes;

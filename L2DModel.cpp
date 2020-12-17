@@ -8,8 +8,6 @@ using namespace l2d;
 using namespace cocos2d;
 using namespace Live2D::Cubism::Framework;
 
-constexpr float CubismCanvasSize = 1024.f;
-constexpr float CubismCanvasScale = CubismCanvasSize / 2;
 static CubismMatrix44 CubismMatrixIdentity = {};
 std::unordered_set<Model*> Model::instances;
 
@@ -72,22 +70,30 @@ bool Model::_init(const std::string& dir, const std::string& fileName)
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(recreatListener, 2);
 	model->GetRenderer<Rendering::CubismRenderer>()->IsPremultipliedAlpha(false);
 
-	// the full canvas size is 1024*1024, correspond to vertex position range (-1,-1) to (1,1)
-	// the canvas size of model is in vertex coord
-	const auto w = model->GetModel()->GetCanvasWidth();
-	const auto h = model->GetModel()->GetCanvasHeight();
-	canvasSize.width = w * CubismCanvasScale;
-	canvasSize.height = h * CubismCanvasScale;
+	Live2D::Cubism::Core::csmVector2 tmpSizeInPixels;
+	Live2D::Cubism::Core::csmVector2 tmpOriginInPixels;
+	csmFloat32 tmpPixelsPerUnit;
+	csmReadCanvasInfo(model->GetModel()->GetModel(),
+		&tmpSizeInPixels, &tmpOriginInPixels, &tmpPixelsPerUnit);
+
+	canvasSizePixel.setSize(tmpSizeInPixels.X, tmpSizeInPixels.Y);
+	originPixel.set(tmpOriginInPixels.X, tmpOriginInPixels.Y);
+	pixelsPerUnit = model->GetModel()->GetPixelsPerUnit();
+
+	// the full canvas size corresponds to vertex position range (-1,-1) to (1,1)
 
 	Mat4 trans;
-	Mat4::createTranslation(w / 2, h / 2, 0.f, &trans);
+	Mat4::createTranslation(
+		canvasSizePixel.width / pixelsPerUnit / 2,
+		canvasSizePixel.height / pixelsPerUnit / 2, 0.f, &trans);
 	Mat4 scale;
-	Mat4::createScale(CubismCanvasScale, CubismCanvasScale, 1.f, &scale);
+	Mat4::createScale(pixelsPerUnit, pixelsPerUnit, 1.f, &scale);
 	constTransform = scale * trans;
-	debugRenderer->setPosition(canvasSize.width / 2, canvasSize.height / 2);
-	debugRenderer->setScale(CubismCanvasScale);
+	debugRenderer->setPosition(canvasSizePixel.width / 2, canvasSizePixel.height / 2);
+	debugRenderer->setScale(pixelsPerUnit);
 	updateHitBoxes();
-	setContentSize(canvasSize);
+	setContentSize(canvasSizePixel);
+	setAnchorPoint(originPixel / pixelsPerUnit / 2);
 
 	loadModelInfo();
 	return true;
@@ -134,7 +140,7 @@ void Model::loadModelInfo()
 
 Size Model::getCanvasSize() const
 {
-	return canvasSize;
+	return canvasSizePixel;
 }
 
 std::string Model::getDirectory() const
@@ -190,7 +196,7 @@ bool Model::areaHitTest(const char* hitAreaName, float x, float y)
 	if (it != hitBoxes.end())
 	{
 		const auto p = convertToNodeSpace(Vec2(x, y));
-		return it->second.containsPoint((p - canvasSize / 2) / CubismCanvasScale);
+		return it->second.containsPoint((p - canvasSizePixel / 2) / pixelsPerUnit);
 	}
 	return false;
 }
@@ -250,8 +256,8 @@ void Model::setDragging(float x, float y)
 void Model::setTouchDragging(float x, float y)
 {
 	auto p = convertToNodeSpace(Vec2(x, y));
-	p.x = p.x / canvasSize.width * 2 - 1;
-	p.y = p.y / canvasSize.height * 2 - 1;
+	p.x = p.x / canvasSizePixel.width * 2 - 1;
+	p.y = p.y / canvasSizePixel.height * 2 - 1;
 	p.clamp(-Vec2::ONE, Vec2::ONE);
 	model->SetDragging(p.x, p.y);
 }
@@ -366,7 +372,7 @@ void Model::drawDebugRects()
 		debugRenderer->drawSolidRect(rect.origin, rect.origin + rect.size, hitAreaColor);
 	}
 	// draw model canvas
-	const auto halfSize = Vec2(canvasSize / (CubismCanvasScale * 2));
+	const auto halfSize = Vec2(canvasSizePixel / (pixelsPerUnit * 2));
 	debugRenderer->drawSolidRect(-halfSize, halfSize, Color4F(1.0f, 1.0f, 1.0f, 0.2f));
 	// draw full canvas
 	//debugRenderer->drawSolidRect(-Vec2::ONE, Vec2::ONE, Color4F(1.0f, 0.0f, 0.0f, 0.2f));
@@ -377,7 +383,7 @@ bool Model::hitTest(const Vec2& pt, const Camera* camera, Vec3* p) const
 #if 0
 	// only test hit boxes
 	auto local = convertToNodeSpace(pt);
-	local = (local - canvasSize / 2) / CubismCanvasScale;
+	local = (local - canvasSizePixel / 2) / pixelsPerUnit;
 	for (auto& it : hitBoxes)
 	{
 		if (it.second.containsPoint(local))
