@@ -273,7 +273,7 @@ void Model::setModelOpacity(uint8_t opacity)
 
 uint8_t Model::getModelOpacity() const
 {
-	return model->GetOpacity() * 255;
+	return model->GetOpacity() * 255.f;
 }
 
 void Model::setModelColor(const Color4B& color)
