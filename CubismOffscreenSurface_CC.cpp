@@ -7,10 +7,7 @@ using namespace Live2D::Cubism::Framework;
 using namespace Live2D::Cubism::Framework::Rendering;
 
 CubismOffscreenFrame_CC::CubismOffscreenFrame_CC()
-	: _renderTexture(nullptr)
-	, _colorBuffer(nullptr)
-	, _bufferWidth(0)
-	, _bufferHeight(0)
+	: _renderTargetFlags(), _oldRenderTargetFlag()
 {
 	ccr = Director::getInstance()->getRenderer();
 }
@@ -47,33 +44,44 @@ void CubismOffscreenFrame_CC::Clear(float r, float g, float b, float a)
 }
 
 csmBool CubismOffscreenFrame_CC::CreateOffscreenFrame(
-	csmUint32 displayBufferWidth, csmUint32 displayBufferHeight)
+	csmUint32 displayBufferWidth, csmUint32 displayBufferHeight, Texture2D* colorBuffer)
 {
 	DestroyOffscreenFrame();
 
 	do
 	{
-		_renderTexture = RenderTexture::create(displayBufferWidth, displayBufferHeight);
-		if(!_renderTexture)
-			break;
-		_renderTexture->retain();
-		_colorBuffer = _renderTexture->getSprite()->getTexture();
-		_colorBuffer->setTexParameters({
-			SamplerFilter::LINEAR,SamplerFilter::LINEAR,
-			SamplerAddressMode::CLAMP_TO_EDGE,SamplerAddressMode::CLAMP_TO_EDGE });
+		if (!colorBuffer)
+		{
+			_renderTexture = RenderTexture::create(displayBufferWidth, displayBufferHeight);
+			if(!_renderTexture)
+				break;
+			_renderTexture->retain();
+			_colorBuffer = _renderTexture->getSprite()->getTexture();
+			_colorBuffer->setTexParameters({
+				SamplerFilter::LINEAR,SamplerFilter::LINEAR,
+				SamplerAddressMode::CLAMP_TO_EDGE,SamplerAddressMode::CLAMP_TO_EDGE });
+			_isInheritedRenderTexture = false;
+		}
+		else
+		{
+			_colorBuffer = colorBuffer;
+			_isInheritedRenderTexture = true;
+		}
+		_viewPortSize.setSize(
+			_colorBuffer->getContentSizeInPixels().width,
+			_colorBuffer->getContentSizeInPixels().height);
 		_bufferWidth = displayBufferWidth;
 		_bufferHeight = displayBufferHeight;
 		return true;
-
 	} while (false);
-
 	DestroyOffscreenFrame();
 	return false;
 }
 
 void CubismOffscreenFrame_CC::DestroyOffscreenFrame()
 {
-	CC_SAFE_RELEASE_NULL(_renderTexture);
+	if(!_isInheritedRenderTexture)
+		CC_SAFE_RELEASE_NULL(_renderTexture);
 	_colorBuffer = nullptr;
 }
 
