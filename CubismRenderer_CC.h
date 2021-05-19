@@ -4,12 +4,29 @@
 #include "CubismFramework.hpp"
 #include "Type/csmVector.hpp"
 #include "Type/csmRectF.hpp"
+#include "Math/CubismVector2.hpp"
 #include "CubismOffscreenSurface_CC.h"
 #include "cocos2d.h"
 
 namespace Live2D { namespace Cubism {namespace Framework { namespace Rendering {
 	class CubismRenderer_CC;
 	class CubismClippingContext_CC;
+
+	class CubismDrawCommand_CC
+	{
+		cocos2d::CustomCommand _command;
+		csmUint8* _drawBuffer = nullptr;
+		csmSizeInt _vbSize = 0;
+	public:
+		CubismDrawCommand_CC();
+		~CubismDrawCommand_CC();
+
+		cocos2d::CustomCommand* GetCommand() { return &_command; }
+		void CreateVertexBuffer(csmSizeInt stride, csmSizeInt count);
+		void CreateIndexBuffer(csmSizeInt count);
+		void UpdateVertexBuffer(void* data, void* uvData, csmSizeInt count);
+		void UpdateIndexBuffer(void* data, csmSizeInt count);
+	};
 
 	class CubismClippingManager_CC
 	{
@@ -32,15 +49,15 @@ namespace Live2D { namespace Cubism {namespace Framework { namespace Rendering {
 			const csmInt32* drawableMasks, csmInt32 drawableMaskCounts) const;
 		void SetupLayoutBounds(csmInt32 usingClipCount) const;
 		csmVector<CubismClippingContext_CC*>* GetClippingContextListForDraw();
-		void SetClippingMaskBufferSize(csmInt32 size);
-		csmInt32 GetClippingMaskBufferSize() const;
+		void SetClippingMaskBufferSize(csmFloat32 width, csmFloat32 height);
+		CubismVector2 GetClippingMaskBufferSize() const;
 
 		csmInt32    _currentFrameNo;
 
 		csmVector<CubismRenderer::CubismTextureColor*>  _channelColors;
 		csmVector<CubismClippingContext_CC*>            _clippingContextListForMask;
 		csmVector<CubismClippingContext_CC*>            _clippingContextListForDraw;
-		csmInt32                                        _clippingMaskBufferSize;
+		CubismVector2                                   _clippingMaskBufferSize;
 
 		CubismMatrix44  _tmpMatrix;
 		CubismMatrix44  _tmpMatrixForMask;
@@ -54,7 +71,7 @@ namespace Live2D { namespace Cubism {namespace Framework { namespace Rendering {
 		friend class CubismShader_CC;
 		friend class CubismRenderer_CC;
 
-		CubismClippingContext_CC(CubismClippingManager_CC* manager,
+		CubismClippingContext_CC(CubismClippingManager_CC* manager, CubismModel& model,
 			const csmInt32* clippingDrawableIndices, csmInt32 clipCount);
 		virtual ~CubismClippingContext_CC();
 
@@ -70,6 +87,7 @@ namespace Live2D { namespace Cubism {namespace Framework { namespace Rendering {
 		CubismMatrix44 _matrixForMask;
 		CubismMatrix44 _matrixForDraw;
 		csmVector<csmInt32>* _clippedDrawableIndexList;
+		csmVector<CubismDrawCommand_CC*>* _clippingCommandBufferList;
 
 		CubismClippingManager_CC* _owner;
 	};
@@ -152,8 +170,8 @@ namespace Live2D { namespace Cubism {namespace Framework { namespace Rendering {
 
 		void Initialize(CubismModel* model) override;
 		void BindTexture(csmUint32 modelTextureNo, cocos2d::Texture2D* texture);
-		void SetClippingMaskBufferSize(csmInt32 size);
-		csmInt32 GetClippingMaskBufferSize() const;
+		void SetClippingMaskBufferSize(csmFloat32 width, csmFloat32 height);
+		CubismVector2 GetClippingMaskBufferSize() const;
 		CubismOffscreenFrame_CC* GetOffscreenFrame() { return &_offscreenFrameBuffer; }
 
 	protected:
@@ -165,6 +183,11 @@ namespace Live2D { namespace Cubism {namespace Framework { namespace Rendering {
 			, csmUint16* indexArray, csmFloat32* vertexArray, csmFloat32* uvArray
 			, csmFloat32 opacity, CubismBlendMode colorBlendMode
 			, csmBool invertedMask) override;
+		void DrawMeshCC(CubismDrawCommand_CC* command,
+			csmInt32 textureNo, csmInt32 indexCount, csmInt32 vertexCount
+			, csmUint16* indexArray, csmFloat32* vertexArray, csmFloat32* uvArray
+			, csmFloat32 opacity, CubismBlendMode colorBlendMode
+			, csmBool invertedMask);
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
 	public:
@@ -205,6 +228,7 @@ namespace Live2D { namespace Cubism {namespace Framework { namespace Rendering {
 		CubismMatrix44             _mvpMatrix;
 		CubismOffscreenFrame_CC    _offscreenFrameBuffer;
 		cocos2d::backend::CullMode _lastCullMode;
+		csmVector<CubismDrawCommand_CC*> _drawableDrawCommandBuffer;
 	};
 
 }}}}
