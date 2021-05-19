@@ -1,7 +1,4 @@
 #pragma once
-
-#include "base/ccConfig.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
