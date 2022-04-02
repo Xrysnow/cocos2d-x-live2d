@@ -44,13 +44,13 @@ void CubismOffscreenFrame_CC::Clear(float r, float g, float b, float a)
 }
 
 csmBool CubismOffscreenFrame_CC::CreateOffscreenFrame(
-	csmUint32 displayBufferWidth, csmUint32 displayBufferHeight, Texture2D* colorBuffer)
+	csmUint32 displayBufferWidth, csmUint32 displayBufferHeight, RenderTexture* renderTexture)
 {
 	DestroyOffscreenFrame();
 
 	do
 	{
-		if (!colorBuffer)
+		if (!renderTexture)
 		{
 			_renderTexture = RenderTexture::create(displayBufferWidth, displayBufferHeight);
 			if(!_renderTexture)
@@ -64,7 +64,8 @@ csmBool CubismOffscreenFrame_CC::CreateOffscreenFrame(
 		}
 		else
 		{
-			_colorBuffer = colorBuffer;
+			_renderTexture = renderTexture;
+			_colorBuffer = renderTexture->getSprite()->getTexture();
 			_isInheritedRenderTexture = true;
 		}
 		_viewPortSize.setSize(

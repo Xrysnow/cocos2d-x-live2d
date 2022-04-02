@@ -17,7 +17,7 @@ namespace Live2D { namespace Cubism { namespace Framework { namespace Rendering 
 
 		void Clear(float r, float g, float b, float a);
 
-		csmBool CreateOffscreenFrame(csmUint32 displayBufferWidth, csmUint32 displayBufferHeight, cocos2d::Texture2D* colorBuffer = nullptr);
+		csmBool CreateOffscreenFrame(csmUint32 displayBufferWidth, csmUint32 displayBufferHeight, cocos2d::RenderTexture* renderTexture = nullptr);
 
 		void DestroyOffscreenFrame();
 
