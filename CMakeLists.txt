@@ -40,6 +40,7 @@ target_sources(${LIB_NAME}
     ${SRC_DIR}/CubismFrameworkConfig.hpp
     ${SRC_DIR}/CubismModelSettingJson.cpp
     ${SRC_DIR}/CubismModelSettingJson.hpp
+    ${SRC_DIR}/CubismJsonHolder.hpp
     ${SRC_DIR}/ICubismAllocator.hpp
     ${SRC_DIR}/ICubismModelSetting.hpp
     ${SRC_DIR}/Live2DCubismCore.hpp
@@ -100,6 +101,10 @@ if(XCODE OR VS)
 endif()
 
 target_compile_definitions(${LIB_NAME} PUBLIC CSM_TARGET_COCOS)
+
+if(CC_USE_GFX)
+    target_compile_definitions(${LIB_NAME} PUBLIC CC_USE_GFX)
+endif()
 
 set_target_properties(${LIB_NAME}
   PROPERTIES
