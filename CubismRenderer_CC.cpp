@@ -2,6 +2,21 @@
 #include "Type/CubismBasicType.hpp"
 #include "Model/CubismModel.hpp"
 #include "renderer/backend/Device.h"
+#include <cstring>
+#include <vector>
+
+#ifdef CC_USE_GFX
+#include "renderer/backend/gfx/DeviceGFX.h"
+using Type = cocos2d::backend::DeviceGFX::Type;
+using Uniform = cocos2d::backend::DeviceGFX::Uniform;
+using UniformList = cocos2d::backend::DeviceGFX::UniformList;
+using UniformBlock = cocos2d::backend::DeviceGFX::UniformBlock;
+using UniformBlockList = cocos2d::backend::DeviceGFX::UniformBlockList;
+using UniformSamplerTexture = cocos2d::backend::DeviceGFX::UniformSamplerTexture;
+using UniformSamplerTextureList = cocos2d::backend::DeviceGFX::UniformSamplerTextureList;
+using Attribute = cocos2d::backend::DeviceGFX::Attribute;
+using AttributeList = cocos2d::backend::DeviceGFX::AttributeList;
+#endif
 
 #define CSM_SAFE_DELETE_NULL(p) do { if(p) {CSM_DELETE(p); p = nullptr;} } while (false)
 
@@ -48,10 +63,14 @@ void CubismDrawCommand_CC::CreateIndexBuffer(csmSizeInt count)
 
 void CubismDrawCommand_CC::UpdateVertexBuffer(void* data, void* uvData, csmSizeInt count)
 {
-	auto vbuf = reinterpret_cast<csmFloat32*>(_drawBuffer);
-	const auto arrSize = count * sizeof(float) * 2;
-	std::memcpy(vbuf, data, arrSize);
-	std::memcpy(vbuf + count * 2, uvData, arrSize);
+	const auto vbuf = reinterpret_cast<Core::csmVector2*>(_drawBuffer);
+	const auto pos = static_cast<Core::csmVector2*>(data);
+	const auto uv = static_cast<Core::csmVector2*>(uvData);
+	for (size_t i = 0; i < count; ++i)
+	{
+		vbuf[i * 2] = pos[i];
+		vbuf[i * 2 + 1] = uv[i];
+	}
 	_command.updateVertexBuffer(_drawBuffer, _vbSize);
 }
 
@@ -226,16 +245,52 @@ void CubismClippingManager_CC::SetupClippingContext(CubismModel& model, CubismRe
 			csmRectF* allClippedDrawRect = clipContext->_allClippedDrawRect; //このマスクを使う、全ての描画オブジェクトの論理座標上の囲み矩形
 			csmRectF* layoutBoundsOnTex01 = clipContext->_layoutBounds; //この中にマスクを収める
 
-			// モデル座標上の矩形を、適宜マージンを付けて使う
 			const csmFloat32 MARGIN = 0.05f;
-			_tmpBoundsOnModel.SetRect(allClippedDrawRect);
-			_tmpBoundsOnModel.Expand(allClippedDrawRect->Width * MARGIN, allClippedDrawRect->Height * MARGIN);
-			//########## 本来は割り当てられた領域の全体を使わず必要最低限のサイズがよい
+			csmFloat32 scaleX = 0.0f;
+			csmFloat32 scaleY = 0.0f;
 
-			// シェーダ用の計算式を求める。回転を考慮しない場合は以下のとおり
-			// movePeriod' = movePeriod * scaleX + offX     [[ movePeriod' = (movePeriod - tmpBoundsOnModel.movePeriod)*scale + layoutBoundsOnTex01.movePeriod ]]
-			const csmFloat32 scaleX = layoutBoundsOnTex01->Width / _tmpBoundsOnModel.Width;
-			const csmFloat32 scaleY = layoutBoundsOnTex01->Height / _tmpBoundsOnModel.Height;
+			if (renderer->IsUsingHighPrecisionMask())
+			{
+				const csmFloat32 ppu = model.GetPixelsPerUnit();
+				const csmFloat32 maskPixelWidth = clipContext->_owner->_clippingMaskBufferSize.X;
+				const csmFloat32 maskPixelHeight = clipContext->_owner->_clippingMaskBufferSize.Y;
+				const csmFloat32 physicalMaskWidth = layoutBoundsOnTex01->Width * maskPixelWidth;
+				const csmFloat32 physicalMaskHeight = layoutBoundsOnTex01->Height * maskPixelHeight;
+
+
+				_tmpBoundsOnModel.SetRect(allClippedDrawRect);
+
+				if (_tmpBoundsOnModel.Width * ppu > physicalMaskWidth)
+				{
+					_tmpBoundsOnModel.Expand(allClippedDrawRect->Width * MARGIN, 0.0f);
+					scaleX = layoutBoundsOnTex01->Width / _tmpBoundsOnModel.Width;
+				}
+				else
+				{
+					scaleX = ppu / physicalMaskWidth;
+				}
+
+				if (_tmpBoundsOnModel.Height * ppu > physicalMaskHeight)
+				{
+					_tmpBoundsOnModel.Expand(0.0f, allClippedDrawRect->Height * MARGIN);
+					scaleY = layoutBoundsOnTex01->Height / _tmpBoundsOnModel.Height;
+				}
+				else
+				{
+					scaleY = ppu / physicalMaskHeight;
+				}
+			}
+			else
+			{
+				// モデル座標上の矩形を、適宜マージンを付けて使う
+				_tmpBoundsOnModel.SetRect(allClippedDrawRect);
+				_tmpBoundsOnModel.Expand(allClippedDrawRect->Width * MARGIN, allClippedDrawRect->Height * MARGIN);
+				//########## 本来は割り当てられた領域の全体を使わず必要最低限のサイズがよい
+				// シェーダ用の計算式を求める。回転を考慮しない場合は以下のとおり
+				// movePeriod' = movePeriod * scaleX + offX     [[ movePeriod' = (movePeriod - tmpBoundsOnModel.movePeriod)*scale + layoutBoundsOnTex01.movePeriod ]]
+				scaleX = layoutBoundsOnTex01->Width / _tmpBoundsOnModel.Width;
+				scaleY = layoutBoundsOnTex01->Height / _tmpBoundsOnModel.Height;
+			}
 
 			// マスク生成時に使う行列を求める
 			{
@@ -549,9 +604,8 @@ CubismClippingContext_CC::CubismClippingContext_CC(
 		const csmInt32 clippingId = _clippingIdList[i];
 		const csmInt32 drawableVertexCount = model.GetDrawableVertexCount(clippingId);
 		const csmInt32 drawableVertexIndexCount = model.GetDrawableVertexIndexCount(clippingId);
-		const csmSizeInt vertexSize = sizeof(csmFloat32) * 2;
 		auto drawCommandBuffer = CSM_NEW CubismDrawCommand_CC();
-		drawCommandBuffer->CreateVertexBuffer(vertexSize, drawableVertexCount * 2);      // Vertices + UVs
+		drawCommandBuffer->CreateVertexBuffer(sizeof(csmFloat32) * 4, drawableVertexCount);      // Vertices + UVs
 		drawCommandBuffer->CreateIndexBuffer(drawableVertexIndexCount);
 		_clippingCommandBufferList->PushBack(drawCommandBuffer);
 	}
@@ -669,13 +723,18 @@ void CubismShader_CC::ReleaseShaderProgram()
 	}
 }
 
+#if defined(CC_PLATFORM_MOBILE)
+#define FRAG_SHADER_HEADER "#version 100\nprecision mediump float;"
+#define VERT_SHADER_HEADER "#version 100\n"
+#else
+#define FRAG_SHADER_HEADER "#version 120\n"
+#define VERT_SHADER_HEADER "#version 120\n"
+#endif
+
 // SetupMask
 static const csmChar* VertShaderSrcSetupMask =
-#if defined(CC_PLATFORM_MOBILE)
-	"#version 100\n"
-#else
-	"#version 120\n"
-#endif
+#ifndef CC_USE_GFX
+	FRAG_SHADER_HEADER
 	"attribute vec2 a_position;"
 	"attribute vec2 a_texCoord;"
 	"varying vec2 v_texCoord;"
@@ -689,13 +748,38 @@ static const csmChar* VertShaderSrcSetupMask =
 	"v_texCoord = a_texCoord;"
 	"v_texCoord.y = 1.0 - v_texCoord.y;"
 	"}";
-static const csmChar* FragShaderSrcSetupMask =
-#if defined(CC_PLATFORM_MOBILE)
-	"#version 100\n"
-	"precision mediump float;"
 #else
-	"#version 120\n"
+	R"(
+layout(location=0) in vec2 a_position;
+layout(location=1) in vec2 a_texCoord;
+layout(std140, binding=0) uniform VSBlock
+{
+	mat4 u_clipMatrix;
+};
+layout(location=0) out vec4 v_myPos;
+layout(location=1) out vec2 v_texCoord;
+
+void main()
+{
+	vec4 pos = vec4(a_position.x, a_position.y, 0.0, 1.0);
+	gl_Position = u_clipMatrix * pos;
+	v_myPos = u_clipMatrix * pos;
+	v_texCoord = a_texCoord;
+	v_texCoord.y = 1.0 - v_texCoord.y;
+}
+)";
+static const UniformBlock VertShaderSrcSetupMaskBlock = {
+	0,0,"VSBlock",
+	UniformList({
+		{"u_clipMatrix", Type::MAT4, 1},
+	}),
+	1
+};
 #endif
+
+static const csmChar* FragShaderSrcSetupMask =
+#ifndef CC_USE_GFX
+	FRAG_SHADER_HEADER
 	"varying vec2 v_texCoord;"
 	"varying vec4 v_myPos;"
 	"uniform sampler2D s_texture0;"
@@ -711,7 +795,42 @@ static const csmChar* FragShaderSrcSetupMask =
 
 	"gl_FragColor = u_channelFlag * texture2D(s_texture0 , v_texCoord).a * isInside;"
 	"}";
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+#else
+	R"(
+layout(location=0) in vec4 v_myPos;
+layout(location=1) in vec2 v_texCoord;
+layout(std140, binding=1) uniform FSBlock
+{
+	vec4 u_channelFlag;
+	vec4 u_baseColor;
+};
+layout(binding=2) uniform sampler2D s_texture0;
+layout(location=0) out vec4 cc_FragColor;
+
+void main()
+{
+	float isInside =
+	  step(u_baseColor.x, v_myPos.x/v_myPos.w)
+	* step(u_baseColor.y, v_myPos.y/v_myPos.w)
+	* step(v_myPos.x/v_myPos.w, u_baseColor.z)
+	* step(v_myPos.y/v_myPos.w, u_baseColor.w);
+	cc_FragColor = u_channelFlag * texture(s_texture0 , v_texCoord).a * isInside;
+}
+)";
+static const UniformBlock FragShaderSrcSetupMaskBlock = {
+	0,1,"FSBlock",
+	UniformList({
+		{"u_channelFlag", Type::FLOAT4, 1},
+		{"u_baseColor", Type::FLOAT4, 1},
+	}),
+	1
+};
+static const UniformSamplerTextureList FragShaderSrcSetupMaskTextures = {
+	UniformSamplerTexture {
+		0,2,"s_texture0",Type::SAMPLER2D,1}
+};
+#endif
+#if CSM_RENDERER_EXT
 static const csmChar* FragShaderSrcSetupMaskTegra =
 	"#version 100\n"
 	"#extension GL_NV_shader_framebuffer_fetch : enable\n"
@@ -736,11 +855,8 @@ static const csmChar* FragShaderSrcSetupMaskTegra =
 //----- バーテックスシェーダプログラム -----
 // Normal & Add & Mult 共通
 static const csmChar* VertShaderSrc =
-#if defined(CC_PLATFORM_MOBILE)
-	"#version 100\n"
-#else
-	"#version 120\n"
-#endif
+#ifndef CC_USE_GFX
+	VERT_SHADER_HEADER
 	"attribute vec2 a_position;" //v.vertex
 	"attribute vec2 a_texCoord;" //v.texcoord
 	"varying vec2 v_texCoord;" //v2f.texcoord
@@ -752,14 +868,36 @@ static const csmChar* VertShaderSrc =
 	"v_texCoord = a_texCoord;"
 	"v_texCoord.y = 1.0 - v_texCoord.y;"
 	"}";
+#else
+	R"(
+layout(location=0) in vec2 a_position;
+layout(location=1) in vec2 a_texCoord;
+layout(std140, binding=0) uniform VSBlock
+{
+	mat4 u_matrix;
+};
+layout(location=0) out vec2 v_texCoord;
 
+void main()
+{
+	vec4 pos = vec4(a_position.x, a_position.y, 0.0, 1.0);
+	gl_Position = u_matrix * pos;
+	v_texCoord = a_texCoord;
+	v_texCoord.y = 1.0 - v_texCoord.y;
+}
+)";
+static const UniformBlock VertShaderSrcBlock = {
+	0,0,"VSBlock",
+	UniformList({
+		{"u_matrix", Type::MAT4, 1},
+	}),
+	1
+};
+#endif
 // Normal & Add & Mult 共通（クリッピングされたものの描画用）
 static const csmChar* VertShaderSrcMasked =
-#if defined(CC_PLATFORM_MOBILE)
-	"#version 100\n"
-#else
-	"#version 120\n"
-#endif
+#ifndef CC_USE_GFX
+	VERT_SHADER_HEADER
 	"attribute vec2 a_position;"
 	"attribute vec2 a_texCoord;"
 	"varying vec2 v_texCoord;"
@@ -774,25 +912,78 @@ static const csmChar* VertShaderSrcMasked =
 	"v_texCoord = a_texCoord;"
 	"v_texCoord.y = 1.0 - v_texCoord.y;"
 	"}";
+#else
+	R"(
+layout(location=0) in vec2 a_position;
+layout(location=1) in vec2 a_texCoord;
+layout(std140, binding=0) uniform VSBlock
+{
+	mat4 u_matrix;
+	mat4 u_clipMatrix;
+};
+layout(location=0) out vec2 v_texCoord;
+layout(location=1) out vec4 v_clipPos;
 
+void main()
+{
+	vec4 pos = vec4(a_position.x, a_position.y, 0.0, 1.0);
+	gl_Position = u_matrix * pos;
+	v_clipPos = u_clipMatrix * pos;
+	v_texCoord = a_texCoord;
+	v_texCoord.y = 1.0 - v_texCoord.y;
+}
+)";
+static const UniformBlock VertShaderSrcMaskedBlock = {
+	0,0,"VSBlock",
+	UniformList({
+		{"u_matrix", Type::MAT4, 1},
+		{"u_clipMatrix", Type::MAT4, 1},
+	}),
+	1
+};
+#endif
 //----- フラグメントシェーダプログラム -----
 // Normal & Add & Mult 共通
 static const csmChar* FragShaderSrc =
-#if defined(CC_PLATFORM_MOBILE)
-	"#version 100\n"
-	"precision mediump float;"
-#else
-	"#version 120\n"
-#endif
+#ifndef CC_USE_GFX
+	FRAG_SHADER_HEADER
 	"varying vec2 v_texCoord;" //v2f.texcoord
 	"uniform sampler2D s_texture0;" //_MainTex
 	"uniform vec4 u_baseColor;" //v2f.color
 	"void main()"
 	"{"
-	"vec4 color = texture2D(s_texture0 , v_texCoord) * u_baseColor;"
-	"gl_FragColor = vec4(color.rgb * color.a,  color.a);"
+	"vec4 color = texture2D(s_texture0, v_texCoord) * u_baseColor;"
+	"gl_FragColor = vec4(color.rgb * color.a, color.a);"
 	"}";
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+#else
+	R"(
+layout(location=0) in vec2 v_texCoord;
+layout(std140, binding=1) uniform FSBlock
+{
+	vec4 u_baseColor;
+};
+layout(binding=2) uniform sampler2D s_texture0;
+layout(location=0) out vec4 cc_FragColor;
+
+void main()
+{
+	vec4 color = texture(s_texture0, v_texCoord) * u_baseColor;
+	cc_FragColor = vec4(color.rgb * color.a, color.a);
+}
+)";
+static const UniformBlock FragShaderSrcBlock = {
+	0,1,"FSBlock",
+	UniformList({
+		{"u_baseColor", Type::FLOAT4, 1},
+	}),
+	1
+};
+static const UniformSamplerTextureList FragShaderSrcTextures = {
+	UniformSamplerTexture {
+		0,2,"s_texture0",Type::SAMPLER2D,1}
+};
+#endif
+#if CSM_RENDERER_EXT
 static const csmChar* FragShaderSrcTegra =
 	"#version 100\n"
 	"#extension GL_NV_shader_framebuffer_fetch : enable\n"
@@ -809,12 +1000,8 @@ static const csmChar* FragShaderSrcTegra =
 
 // Normal & Add & Mult 共通 （PremultipliedAlpha）
 static const csmChar* FragShaderSrcPremultipliedAlpha =
-#if defined(CC_PLATFORM_MOBILE)
-	"#version 100\n"
-	"precision mediump float;"
-#else
-	"#version 120\n"
-#endif
+#ifndef CC_USE_GFX
+	FRAG_SHADER_HEADER
 	"varying vec2 v_texCoord;" //v2f.texcoord
 	"uniform sampler2D s_texture0;" //_MainTex
 	"uniform vec4 u_baseColor;" //v2f.color
@@ -822,7 +1009,23 @@ static const csmChar* FragShaderSrcPremultipliedAlpha =
 	"{"
 	"gl_FragColor = texture2D(s_texture0 , v_texCoord) * u_baseColor;"
 	"}";
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+#else
+	R"(
+layout(location=0) in vec2 v_texCoord;
+layout(std140, binding=1) uniform FSBlock
+{
+	vec4 u_baseColor;
+};
+layout(binding=2) uniform sampler2D s_texture0;
+layout(location=0) out vec4 cc_FragColor;
+
+void main()
+{
+	cc_FragColor = texture(s_texture0, v_texCoord) * u_baseColor;
+}
+)";
+#endif
+#if CSM_RENDERER_EXT
 static const csmChar* FragShaderSrcPremultipliedAlphaTegra =
 	"#version 100\n"
 	"#extension GL_NV_shader_framebuffer_fetch : enable\n"
@@ -838,12 +1041,8 @@ static const csmChar* FragShaderSrcPremultipliedAlphaTegra =
 
 // Normal & Add & Mult 共通（クリッピングされたものの描画用）
 static const csmChar* FragShaderSrcMask =
-#if defined(CC_PLATFORM_MOBILE)
-	"#version 100\n"
-	"precision mediump float;"
-#else
-	"#version 120\n"
-#endif
+#ifndef CC_USE_GFX
+	FRAG_SHADER_HEADER
 	"varying vec2 v_texCoord;"
 	"varying vec4 v_clipPos;"
 	"uniform sampler2D s_texture0;"
@@ -853,13 +1052,51 @@ static const csmChar* FragShaderSrcMask =
 	"void main()"
 	"{"
 	"vec4 col_formask = texture2D(s_texture0 , v_texCoord) * u_baseColor;"
-	"col_formask.rgb = col_formask.rgb  * col_formask.a ;"
+	"col_formask.rgb = col_formask.rgb * col_formask.a ;"
 	"vec4 clipMask = (1.0 - texture2D(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;"
 	"float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;"
 	"col_formask = col_formask * maskVal;"
 	"gl_FragColor = col_formask;"
 	"}";
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+#else
+	R"(
+layout(location=0) in vec2 v_texCoord;
+layout(location=1) in vec4 v_clipPos;
+layout(std140, binding=1) uniform FSBlock
+{
+	vec4 u_channelFlag;
+	vec4 u_baseColor;
+};
+layout(binding=2) uniform sampler2D s_texture0;
+layout(binding=3) uniform sampler2D s_texture1;
+layout(location=0) out vec4 cc_FragColor;
+
+void main()
+{
+	vec4 col_formask = texture(s_texture0 , v_texCoord) * u_baseColor;
+	col_formask.rgb = col_formask.rgb * col_formask.a ;
+	vec4 clipMask = (1.0 - texture(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;
+	float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;
+	col_formask = col_formask * maskVal;
+	cc_FragColor = col_formask;
+}
+)";
+static const UniformBlock FragShaderSrcMaskBlock = {
+	0,1,"FSBlock",
+	UniformList({
+		{"u_channelFlag", Type::FLOAT4, 1},
+		{"u_baseColor", Type::FLOAT4, 1},
+	}),
+	1
+};
+static const UniformSamplerTextureList FragShaderSrcMaskTextures = {
+	UniformSamplerTexture {
+		0,2,"s_texture0",Type::SAMPLER2D,1},
+	UniformSamplerTexture {
+		0,3,"s_texture1",Type::SAMPLER2D,1}
+};
+#endif
+#if CSM_RENDERER_EXT
 static const csmChar* FragShaderSrcMaskTegra =
 	"#version 100\n"
 	"#extension GL_NV_shader_framebuffer_fetch : enable\n"
@@ -883,12 +1120,8 @@ static const csmChar* FragShaderSrcMaskTegra =
 
 // Normal & Add & Mult 共通（クリッピングされて反転使用の描画用）
 static const csmChar* FragShaderSrcMaskInverted =
-#if defined(CC_PLATFORM_MOBILE)
-	"#version 100\n"
-	"precision mediump float;"
-#else
-	"#version 120\n"
-#endif
+#ifndef CC_USE_GFX
+	FRAG_SHADER_HEADER
 	"varying vec2 v_texCoord;"
 	"varying vec4 v_clipPos;"
 	"uniform sampler2D s_texture0;"
@@ -898,13 +1131,37 @@ static const csmChar* FragShaderSrcMaskInverted =
 	"void main()"
 	"{"
 	"vec4 col_formask = texture2D(s_texture0 , v_texCoord) * u_baseColor;"
-	"col_formask.rgb = col_formask.rgb  * col_formask.a ;"
+	"col_formask.rgb = col_formask.rgb * col_formask.a ;"
 	"vec4 clipMask = (1.0 - texture2D(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;"
 	"float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;"
 	"col_formask = col_formask * (1.0 - maskVal);"
 	"gl_FragColor = col_formask;"
 	"}";
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+#else
+	R"(
+layout(location=0) in vec2 v_texCoord;
+layout(location=1) in vec4 v_clipPos;
+layout(std140, binding=1) uniform FSBlock
+{
+	vec4 u_channelFlag;
+	vec4 u_baseColor;
+};
+layout(binding=2) uniform sampler2D s_texture0;
+layout(binding=3) uniform sampler2D s_texture1;
+layout(location=0) out vec4 cc_FragColor;
+
+void main()
+{
+	vec4 col_formask = texture(s_texture0 , v_texCoord) * u_baseColor;
+	col_formask.rgb = col_formask.rgb * col_formask.a ;
+	vec4 clipMask = (1.0 - texture(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;
+	float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;
+	col_formask = col_formask * (1.0 - maskVal);
+	cc_FragColor = col_formask;
+}
+)";
+#endif
+#if CSM_RENDERER_EXT
 static const csmChar* FragShaderSrcMaskInvertedTegra =
 	"#version 100\n"
 	"#extension GL_NV_shader_framebuffer_fetch : enable\n"
@@ -928,12 +1185,8 @@ static const csmChar* FragShaderSrcMaskInvertedTegra =
 
 // Normal & Add & Mult 共通（クリッピングされたものの描画用、PremultipliedAlphaの場合）
 static const csmChar* FragShaderSrcMaskPremultipliedAlpha =
-#if defined(CC_PLATFORM_MOBILE)
-	"#version 100\n"
-	"precision mediump float;"
-#else
-	"#version 120\n"
-#endif
+#ifndef CC_USE_GFX
+	FRAG_SHADER_HEADER
 	"varying vec2 v_texCoord;"
 	"varying vec4 v_clipPos;"
 	"uniform sampler2D s_texture0;"
@@ -948,7 +1201,30 @@ static const csmChar* FragShaderSrcMaskPremultipliedAlpha =
 	"col_formask = col_formask * maskVal;"
 	"gl_FragColor = col_formask;"
 	"}";
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+#else
+	R"(
+layout(location=0) in vec2 v_texCoord;
+layout(location=1) in vec4 v_clipPos;
+layout(std140, binding=1) uniform FSBlock
+{
+	vec4 u_channelFlag;
+	vec4 u_baseColor;
+};
+layout(binding=2) uniform sampler2D s_texture0;
+layout(binding=3) uniform sampler2D s_texture1;
+layout(location=0) out vec4 cc_FragColor;
+
+void main()
+{
+	vec4 col_formask = texture(s_texture0 , v_texCoord) * u_baseColor;
+	vec4 clipMask = (1.0 - texture(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;
+	float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;
+	col_formask = col_formask * maskVal;
+	cc_FragColor = col_formask;
+}
+)";
+#endif
+#if CSM_RENDERER_EXT
 static const csmChar* FragShaderSrcMaskPremultipliedAlphaTegra =
 	"#version 100\n"
 	"#extension GL_NV_shader_framebuffer_fetch : enable\n"
@@ -971,12 +1247,8 @@ static const csmChar* FragShaderSrcMaskPremultipliedAlphaTegra =
 
 // Normal & Add & Mult 共通（クリッピングされて反転使用の描画用、PremultipliedAlphaの場合）
 static const csmChar* FragShaderSrcMaskInvertedPremultipliedAlpha =
-#if defined(CC_PLATFORM_MOBILE)
-	"#version 100\n"
-	"precision mediump float;"
-#else
-	"#version 120\n"
-#endif
+#ifndef CC_USE_GFX
+	FRAG_SHADER_HEADER
 	"varying vec2 v_texCoord;"
 	"varying vec4 v_clipPos;"
 	"uniform sampler2D s_texture0;"
@@ -991,7 +1263,30 @@ static const csmChar* FragShaderSrcMaskInvertedPremultipliedAlpha =
 	"col_formask = col_formask * (1.0 - maskVal);"
 	"gl_FragColor = col_formask;"
 	"}";
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+#else
+	R"(
+layout(location=0) in vec2 v_texCoord;
+layout(location=1) in vec4 v_clipPos;
+layout(std140, binding=1) uniform FSBlock
+{
+	vec4 u_channelFlag;
+	vec4 u_baseColor;
+};
+layout(binding=2) uniform sampler2D s_texture0;
+layout(binding=3) uniform sampler2D s_texture1;
+layout(location=0) out vec4 cc_FragColor;
+
+void main()
+{
+	vec4 col_formask = texture(s_texture0 , v_texCoord) * u_baseColor;
+	vec4 clipMask = (1.0 - texture(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;
+	float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;
+	col_formask = col_formask * (1.0 - maskVal);
+	cc_FragColor = col_formask;
+}
+)";
+#endif
+#if CSM_RENDERER_EXT
 static const csmChar* FragShaderSrcMaskInvertedPremultipliedAlphaTegra =
 	"#version 100\n"
 	"#extension GL_NV_shader_framebuffer_fetch : enable\n"
@@ -1038,7 +1333,7 @@ void CubismShader_CC::DeleteInstance()
 	}
 }
 
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+#if CSM_RENDERER_EXT
 csmBool CubismShader_CC::s_extMode = false;
 csmBool CubismShader_CC::s_extPAMode = false;
 void CubismShader_CC::SetExtShaderMode(csmBool extMode, csmBool extPAMode) {
@@ -1054,7 +1349,7 @@ void CubismShader_CC::GenerateShaders()
 		_shaderSets.PushBack(CSM_NEW CubismShaderSet());
 	}
 
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+#if CSM_RENDERER_EXT
 	if (s_extMode)
 	{
 		_shaderSets[0]->ShaderProgram = LoadShaderProgram(VertShaderSrcSetupMask, FragShaderSrcSetupMaskTegra);
@@ -1096,6 +1391,7 @@ void CubismShader_CC::GenerateShaders()
 
 #else
 
+#ifndef CC_USE_GFX
 	_shaderSets[0]->ShaderProgram = LoadShaderProgram(VertShaderSrcSetupMask, FragShaderSrcSetupMask);
 
 	_shaderSets[1]->ShaderProgram = LoadShaderProgram(VertShaderSrc, FragShaderSrc);
@@ -1104,6 +1400,79 @@ void CubismShader_CC::GenerateShaders()
 	_shaderSets[4]->ShaderProgram = LoadShaderProgram(VertShaderSrc, FragShaderSrcPremultipliedAlpha);
 	_shaderSets[5]->ShaderProgram = LoadShaderProgram(VertShaderSrcMasked, FragShaderSrcMaskPremultipliedAlpha);
 	_shaderSets[6]->ShaderProgram = LoadShaderProgram(VertShaderSrcMasked, FragShaderSrcMaskInvertedPremultipliedAlpha);
+#else
+	const auto device = (DeviceGFX*)backend::Device::getInstance();
+	using ShaderStage = DeviceGFX::ShaderStage;
+	using ShaderStageFlagBit = DeviceGFX::ShaderStageFlagBit;
+	DeviceGFX::ShaderInfo info;
+	info.attributes = {
+		DeviceGFX::Attribute{"a_position",VertexFormat::FLOAT2,false,0,false,0},
+		DeviceGFX::Attribute{"a_texCoord",VertexFormat::FLOAT2,false,0,false,1},
+	};
+	//
+	info.name = "CSM_Shader0";
+	info.stages = {
+		ShaderStage{ShaderStageFlagBit::VERTEX, VertShaderSrcSetupMask},
+		ShaderStage{ShaderStageFlagBit::FRAGMENT, FragShaderSrcSetupMask},
+	};
+	info.blocks = { VertShaderSrcSetupMaskBlock, FragShaderSrcSetupMaskBlock };
+	info.samplerTextures = FragShaderSrcSetupMaskTextures;
+	_shaderSets[0]->ShaderProgram = device->newProgram(info);
+	//
+	info.name = "CSM_Shader1";
+	info.stages = {
+		ShaderStage{ShaderStageFlagBit::VERTEX, VertShaderSrc},
+		ShaderStage{ShaderStageFlagBit::FRAGMENT, FragShaderSrc},
+	};
+	info.blocks = { VertShaderSrcBlock, FragShaderSrcBlock };
+	info.samplerTextures = FragShaderSrcTextures;
+	_shaderSets[1]->ShaderProgram = device->newProgram(info);
+	//
+	info.name = "CSM_Shader2";
+	info.stages = {
+		ShaderStage{ShaderStageFlagBit::VERTEX, VertShaderSrcMasked},
+		ShaderStage{ShaderStageFlagBit::FRAGMENT, FragShaderSrcMask},
+	};
+	info.blocks = { VertShaderSrcMaskedBlock, FragShaderSrcMaskBlock };
+	info.samplerTextures = FragShaderSrcMaskTextures;
+	_shaderSets[2]->ShaderProgram = device->newProgram(info);
+	//
+	info.name = "CSM_Shader3";
+	info.stages = {
+		ShaderStage{ShaderStageFlagBit::VERTEX, VertShaderSrcMasked},
+		ShaderStage{ShaderStageFlagBit::FRAGMENT, FragShaderSrcMaskInverted},
+	};
+	info.blocks = { VertShaderSrcMaskedBlock, FragShaderSrcMaskBlock };
+	info.samplerTextures = FragShaderSrcMaskTextures;
+	_shaderSets[3]->ShaderProgram = device->newProgram(info);
+	//
+	info.name = "CSM_Shader4";
+	info.stages = {
+		ShaderStage{ShaderStageFlagBit::VERTEX, VertShaderSrc},
+		ShaderStage{ShaderStageFlagBit::FRAGMENT, FragShaderSrcPremultipliedAlpha},
+	};
+	info.blocks = { VertShaderSrcBlock, FragShaderSrcBlock };
+	info.samplerTextures = FragShaderSrcTextures;
+	_shaderSets[4]->ShaderProgram = device->newProgram(info);
+	//
+	info.name = "CSM_Shader5";
+	info.stages = {
+		ShaderStage{ShaderStageFlagBit::VERTEX, VertShaderSrcMasked},
+		ShaderStage{ShaderStageFlagBit::FRAGMENT, FragShaderSrcMaskPremultipliedAlpha},
+	};
+	info.blocks = { VertShaderSrcMaskedBlock, FragShaderSrcMaskBlock };
+	info.samplerTextures = FragShaderSrcMaskTextures;
+	_shaderSets[5]->ShaderProgram = device->newProgram(info);
+	//
+	info.name = "CSM_Shader6";
+	info.stages = {
+		ShaderStage{ShaderStageFlagBit::VERTEX, VertShaderSrcMasked},
+		ShaderStage{ShaderStageFlagBit::FRAGMENT, FragShaderSrcMaskInvertedPremultipliedAlpha},
+	};
+	info.blocks = { VertShaderSrcMaskedBlock, FragShaderSrcMaskBlock };
+	info.samplerTextures = FragShaderSrcMaskTextures;
+	_shaderSets[6]->ShaderProgram = device->newProgram(info);
+#endif
 
 	// 加算も通常と同じシェーダーを利用する
 	_shaderSets[7]->ShaderProgram = _shaderSets[1]->ShaderProgram;
@@ -1333,7 +1702,7 @@ void CubismShader_CC::SetupShaderProgram(CubismRenderer_CC* renderer
 			VertexFormat::FLOAT2, 0, false);
 		// テクスチャ頂点の設定
 		state->getVertexLayout()->setAttribute(AttributeTexCoordName, shaderSet->AttributeTexCoordLocation,
-			VertexFormat::FLOAT2, vertexCount * sizeof(float) * 2, false);
+			VertexFormat::FLOAT2, sizeof(float) * 2, false);
 
 		// チャンネル
 		const auto channelNo = renderer->GetClippingContextBufferForMask()->_layoutChannelNo;
@@ -1400,7 +1769,7 @@ void CubismShader_CC::SetupShaderProgram(CubismRenderer_CC* renderer
 			VertexFormat::FLOAT2, 0, false);
 		// テクスチャ頂点の設定
 		state->getVertexLayout()->setAttribute(AttributeTexCoordName, shaderSet->AttributeTexCoordLocation,
-			VertexFormat::FLOAT2, vertexCount * sizeof(float) * 2, false);
+			VertexFormat::FLOAT2, sizeof(float) * 2, false);
 
 		if (masked)
 		{
@@ -1435,7 +1804,7 @@ void CubismShader_CC::SetupShaderProgram(CubismRenderer_CC* renderer
 			&vec4, sizeof(float) * 4);
 	}
 
-	state->getVertexLayout()->setLayout(sizeof(float) * 2);
+	state->getVertexLayout()->setLayout(sizeof(csmFloat32) * 4);
 	desc->programState = state;
 	auto& blend = desc->blendDescriptor;
 	blend.blendEnabled = true;
@@ -1445,7 +1814,7 @@ void CubismShader_CC::SetupShaderProgram(CubismRenderer_CC* renderer
 	blend.destinationAlphaBlendFactor = DST_ALPHA;
 }
 
-Program* CubismShader_CC::LoadShaderProgram(const csmChar* vertShaderSrc, const csmChar* fragShaderSrc)
+Program* CubismShader_CC::LoadShaderProgram(const std::string& vertShaderSrc, const std::string& fragShaderSrc)
 {
 	return backend::Device::getInstance()->newProgram(vertShaderSrc, fragShaderSrc);
 }
@@ -1454,7 +1823,7 @@ Program* CubismShader_CC::LoadShaderProgram(const csmChar* vertShaderSrc, const 
  *                                      CubismRenderer_CC
  ********************************************************************************************************************/
 
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+#if CSM_RENDERER_EXT
 void CubismRenderer_CC::SetExtShaderMode(csmBool extMode, csmBool extPAMode)
 {
 	CubismShader_CC::SetExtShaderMode(extMode, extPAMode);
@@ -1535,9 +1904,8 @@ void CubismRenderer_CC::Initialize(CubismModel* model)
 	{
 		const csmInt32 drawableVertexCount = model->GetDrawableVertexCount(i);
 		const csmInt32 drawableVertexIndexCount = model->GetDrawableVertexIndexCount(i);
-		const csmSizeInt vertexSize = sizeof(csmFloat32) * 2;
 		_drawableDrawCommandBuffer[i] = CSM_NEW CubismDrawCommand_CC();
-		_drawableDrawCommandBuffer[i]->CreateVertexBuffer(vertexSize, drawableVertexCount * 2);      // Vertices + UVs
+		_drawableDrawCommandBuffer[i]->CreateVertexBuffer(sizeof(csmFloat32) * 4, drawableVertexCount);      // Vertices + UVs
 		if (drawableVertexIndexCount > 0)
 		{
 			_drawableDrawCommandBuffer[i]->CreateIndexBuffer(drawableVertexIndexCount);
@@ -1623,9 +1991,11 @@ void CubismRenderer_CC::DoDrawModel()
 		{
 			if (clipContext->_isUsing) // 書くことになっていた
 			{
-				const auto mbSize = _clippingManager->GetClippingMaskBufferSize();
+				//const auto mbSize = _clippingManager->GetClippingMaskBufferSize();
+				const auto mbSize = _offscreenFrameBuffer.GetViewPortSize();
 				// 生成したFrameBufferと同じサイズでビューポートを設定
-				SetViewPort(0, 0, mbSize.X, mbSize.Y);
+				//SetViewPort(0, 0, mbSize.X, mbSize.Y);
+				SetViewPort(0, 0, mbSize.width, mbSize.height);
 
 				PreDraw(); // バッファをクリアする
 
@@ -1716,73 +2086,6 @@ void CubismRenderer_CC::DrawMesh(csmInt32 textureNo, csmInt32 indexCount, csmInt
 	, csmFloat32 opacity, CubismBlendMode colorBlendMode, csmBool invertedMask)
 {
 	assert(false);
-	const auto it = _textures.find(textureNo);
-#ifndef CSM_DEBUG
-	// モデルが参照するテクスチャがバインドされていない場合は描画をスキップする
-	if (it == _textures.end())
-		return;
-#endif
-
-// 裏面描画の有効・無効
-	if (IsCulling())
-		SetCullMode(backend::CullMode::BACK);
-	else
-		SetCullMode(backend::CullMode::NONE);
-
-	auto modelColorRGBA = GetModelColor();
-
-	if (GetClippingContextBufferForMask() == nullptr) // マスク生成時以外
-	{
-		modelColorRGBA.A *= opacity;
-		if (IsPremultipliedAlpha())
-		{
-			modelColorRGBA.R *= modelColorRGBA.A;
-			modelColorRGBA.G *= modelColorRGBA.A;
-			modelColorRGBA.B *= modelColorRGBA.A;
-		}
-	}
-
-	// シェーダに渡すテクスチャID
-	Texture2D* drawTexture;
-#ifdef CSM_DEBUG
-	// テクスチャマップからバインド済みテクスチャIDを取得
-	// バインドされていなければダミーのテクスチャIDをセットする
-	if (it != _textures.end())
-		drawTexture = it->second;
-	else
-		drawTexture = Director::getInstance()->getTextureCache()->getTextureForKey("/cc_2x2_white_image");
-#else
-	drawTexture = it->second;
-#endif
-
-	auto vbuf = new float[vertexCount * 4];
-	const auto arrSize = vertexCount * sizeof(float) * 2;
-	std::memcpy(vbuf, vertexArray, arrSize);
-	std::memcpy(vbuf + vertexCount * 2, uvArray, arrSize);
-
-	auto cmd = std::make_shared<CustomCommand>();
-	cmds.push_back(cmd);
-	cmd->init(0.f);
-	cmd->setDrawType(CustomCommand::DrawType::ELEMENT);
-	cmd->setPrimitiveType(PrimitiveType::TRIANGLE);
-	cmd->createIndexBuffer(IndexFormat::U_SHORT, indexCount, BufferUsage::STATIC);
-	cmd->createVertexBuffer(sizeof(float) * 4, vertexCount, BufferUsage::STATIC);
-	cmd->updateIndexBuffer(indexArray, indexCount * sizeof(csmUint16));
-	cmd->updateVertexBuffer(vbuf, vertexCount * sizeof(float) * 4);
-	delete[] vbuf;
-
-	CubismShader_CC::GetInstance()->SetupShaderProgram(
-		this, &cmd->getPipelineDescriptor(), drawTexture, vertexCount, vertexArray, uvArray
-		, opacity, colorBlendMode, modelColorRGBA, IsPremultipliedAlpha()
-		, _mvpMatrix, invertedMask
-	);
-
-	// ポリゴンメッシュを描画する
-	ccr->addCommand(cmd.get());
-
-	// 後処理
-	SetClippingContextBufferForDraw(nullptr);
-	SetClippingContextBufferForMask(nullptr);
 }
 
 void CubismRenderer_CC::DrawMeshCC(CubismDrawCommand_CC* command, csmInt32 textureNo, csmInt32 indexCount, csmInt32 vertexCount

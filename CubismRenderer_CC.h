@@ -8,6 +8,8 @@
 #include "CubismOffscreenSurface_CC.h"
 #include "cocos2d.h"
 
+#define CSM_RENDERER_EXT ((CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID) && !defined(CC_USE_GFX))
+
 namespace Live2D { namespace Cubism {namespace Framework { namespace Rendering {
 	class CubismRenderer_CC;
 	class CubismClippingContext_CC;
@@ -127,9 +129,9 @@ namespace Live2D { namespace Cubism {namespace Framework { namespace Rendering {
 		void ReleaseShaderProgram();
 		void GenerateShaders();
 		static cocos2d::backend::Program* LoadShaderProgram(
-			const csmChar* vertShaderSrc, const csmChar* fragShaderSrc);
+			const std::string& vertShaderSrc, const std::string& fragShaderSrc);
 
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+#if CSM_RENDERER_EXT
 	public:
 		static void SetExtShaderMode(csmBool extMode, csmBool extPAMode);
 	private:
@@ -189,7 +191,7 @@ namespace Live2D { namespace Cubism {namespace Framework { namespace Rendering {
 			, csmFloat32 opacity, CubismBlendMode colorBlendMode
 			, csmBool invertedMask);
 
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+#if CSM_RENDERER_EXT
 	public:
 		static void SetExtShaderMode(csmBool extMdoe, csmBool extPAMode = false);
 		static void ReloadShader();

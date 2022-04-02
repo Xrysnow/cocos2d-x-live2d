@@ -5,7 +5,7 @@
 #include "CubismRenderer_CC.h"
 #include "L2DModel.h"
 #include "cocos2d.h"
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+#if CSM_RENDERER_EXT
 #include "renderer/backend/Device.h"
 #endif
 
@@ -39,7 +39,7 @@ bool Framework::_init()
 		return false;
 	}
 	CubismFramework::Initialize();
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+#if CSM_RENDERER_EXT
 	auto exts = (char*)backend::Device::getInstance()->getDeviceInfo()->getExtension();
 	if (strstr(exts, "GL_NV_shader_framebuffer_fetch "))
 		Rendering::CubismRenderer_CC::SetExtShaderMode(true, true);
