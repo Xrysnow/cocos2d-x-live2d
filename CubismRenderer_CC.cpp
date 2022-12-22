@@ -354,12 +354,14 @@ void CubismClippingManager_CC::SetupClippingContext(CubismModel& model, CubismRe
 					// チャンネルも切り替える必要がある(A,R,G,B)
 					renderer->SetClippingContextBufferForMask(clipContext);
 					renderer->DrawMeshCC(clipContext->_clippingCommandBufferList->At(i),
-						model.GetDrawableTextureIndices(clipDrawIndex),
+						model.GetDrawableTextureIndex(clipDrawIndex),
 						model.GetDrawableVertexIndexCount(clipDrawIndex),
 						model.GetDrawableVertexCount(clipDrawIndex),
 						const_cast<csmUint16*>(model.GetDrawableVertexIndices(clipDrawIndex)),
 						const_cast<csmFloat32*>(model.GetDrawableVertices(clipDrawIndex)),
 						reinterpret_cast<csmFloat32*>(const_cast<Core::csmVector2*>(model.GetDrawableVertexUvs(clipDrawIndex))),
+						model.GetMultiplyColor(clipDrawIndex),
+						model.GetScreenColor(clipDrawIndex),
 						model.GetDrawableOpacity(clipDrawIndex),
 						CubismRenderer::CubismBlendMode_Normal,   //クリッピングは通常描画を強制
 						false   // マスク生成時はクリッピングの反転使用は全く関係がない
@@ -1670,6 +1672,8 @@ void CubismShader_CC::SetupShaderProgram(CubismRenderer_CC* renderer
 	, csmFloat32* uvArray, csmFloat32 opacity
 	, CubismRenderer::CubismBlendMode colorBlendMode
 	, const CubismRenderer::CubismTextureColor& baseColor
+	, CubismRenderer::CubismTextureColor multiplyColor
+	, CubismRenderer::CubismTextureColor screenColor
 	, csmBool isPremultipliedAlpha, CubismMatrix44& matrix4x4
 	, csmBool invertedMask)
 {
@@ -2029,12 +2033,14 @@ void CubismRenderer_CC::DoDrawModel()
 					// チャンネルも切り替える必要がある(A,R,G,B)
 					SetClippingContextBufferForMask(clipContext);
 					DrawMeshCC(clipContext->_clippingCommandBufferList->At(index),
-						GetModel()->GetDrawableTextureIndices(clipDrawIndex),
+						GetModel()->GetDrawableTextureIndex(clipDrawIndex),
 						GetModel()->GetDrawableVertexIndexCount(clipDrawIndex),
 						GetModel()->GetDrawableVertexCount(clipDrawIndex),
 						const_cast<csmUint16*>(GetModel()->GetDrawableVertexIndices(clipDrawIndex)),
 						const_cast<csmFloat32*>(GetModel()->GetDrawableVertices(clipDrawIndex)),
 						reinterpret_cast<csmFloat32*>(const_cast<Core::csmVector2*>(GetModel()->GetDrawableVertexUvs(clipDrawIndex))),
+						GetModel()->GetMultiplyColor(clipDrawIndex),
+						GetModel()->GetScreenColor(clipDrawIndex),
 						GetModel()->GetDrawableOpacity(clipDrawIndex),
 						CubismRenderer::CubismBlendMode_Normal,   //クリッピングは通常描画を強制
 						false // マスク生成時はクリッピングの反転使用は全く関係がない
@@ -2064,12 +2070,14 @@ void CubismRenderer_CC::DoDrawModel()
 		}
 
 		DrawMeshCC(_drawableDrawCommandBuffer.At(drawableIndex),
-			GetModel()->GetDrawableTextureIndices(drawableIndex),
+			GetModel()->GetDrawableTextureIndex(drawableIndex),
 			GetModel()->GetDrawableVertexIndexCount(drawableIndex),
 			GetModel()->GetDrawableVertexCount(drawableIndex),
 			const_cast<csmUint16*>(GetModel()->GetDrawableVertexIndices(drawableIndex)),
 			const_cast<csmFloat32*>(GetModel()->GetDrawableVertices(drawableIndex)),
 			reinterpret_cast<csmFloat32*>(const_cast<Core::csmVector2*>(GetModel()->GetDrawableVertexUvs(drawableIndex))),
+			GetModel()->GetMultiplyColor(drawableIndex),
+			GetModel()->GetScreenColor(drawableIndex),
 			GetModel()->GetDrawableOpacity(drawableIndex),
 			GetModel()->GetDrawableBlendMode(drawableIndex),
 			GetModel()->GetDrawableInvertedMask(drawableIndex) // マスクを反転使用するか
@@ -2090,6 +2098,7 @@ void CubismRenderer_CC::DrawMesh(csmInt32 textureNo, csmInt32 indexCount, csmInt
 
 void CubismRenderer_CC::DrawMeshCC(CubismDrawCommand_CC* command, csmInt32 textureNo, csmInt32 indexCount, csmInt32 vertexCount
 	, csmUint16* indexArray, csmFloat32* vertexArray, csmFloat32* uvArray
+	, const CubismTextureColor& multiplyColor, const CubismTextureColor& screenColor
 	, csmFloat32 opacity, CubismBlendMode colorBlendMode, csmBool invertedMask)
 {
 	const auto it = _textures.find(textureNo);
@@ -2137,7 +2146,7 @@ void CubismRenderer_CC::DrawMeshCC(CubismDrawCommand_CC* command, csmInt32 textu
 
 	CubismShader_CC::GetInstance()->SetupShaderProgram(
 		this, &cmd->getPipelineDescriptor(), drawTexture, vertexCount, vertexArray, uvArray
-		, opacity, colorBlendMode, modelColorRGBA, IsPremultipliedAlpha()
+		, opacity, colorBlendMode, modelColorRGBA, multiplyColor, screenColor, IsPremultipliedAlpha()
 		, _mvpMatrix, invertedMask
 	);
 

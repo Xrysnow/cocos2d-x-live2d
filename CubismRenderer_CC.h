@@ -111,6 +111,8 @@ namespace Live2D { namespace Cubism {namespace Framework { namespace Rendering {
 			cocos2d::backend::UniformLocation SamplerTexture0Location;
 			cocos2d::backend::UniformLocation SamplerTexture1Location;
 			cocos2d::backend::UniformLocation UniformBaseColorLocation;
+			cocos2d::backend::UniformLocation UniformMultiplyColorLocation;
+			cocos2d::backend::UniformLocation UniformScreenColorLocation;
 			cocos2d::backend::UniformLocation UnifromChannelFlagLocation;
 		};
 
@@ -124,6 +126,8 @@ namespace Live2D { namespace Cubism {namespace Framework { namespace Rendering {
 			, csmFloat32* uvArray, csmFloat32 opacity
 			, CubismRenderer::CubismBlendMode colorBlendMode
 			, const CubismRenderer::CubismTextureColor& baseColor
+			, CubismRenderer::CubismTextureColor multiplyColor
+			, CubismRenderer::CubismTextureColor screenColor
 			, csmBool isPremultipliedAlpha, CubismMatrix44& matrix4x4
 			, csmBool invertedMask);
 		void ReleaseShaderProgram();
@@ -188,6 +192,7 @@ namespace Live2D { namespace Cubism {namespace Framework { namespace Rendering {
 		void DrawMeshCC(CubismDrawCommand_CC* command,
 			csmInt32 textureNo, csmInt32 indexCount, csmInt32 vertexCount
 			, csmUint16* indexArray, csmFloat32* vertexArray, csmFloat32* uvArray
+			, const CubismTextureColor& multiplyColor, const CubismTextureColor& screenColor
 			, csmFloat32 opacity, CubismBlendMode colorBlendMode
 			, csmBool invertedMask);
 
