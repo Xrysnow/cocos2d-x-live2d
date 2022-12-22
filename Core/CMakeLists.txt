@@ -25,9 +25,12 @@ elseif(WINDOWS)
   elseif(MSVC_VERSION GREATER_EQUAL 1910 AND MSVC_VERSION LESS 1920)
     # Visual Studio 2017
     set(MSVC_NUM 141)
-  elseif(MSVC_VERSION GREATER_EQUAL 1920)
+  elseif(MSVC_VERSION GREATER_EQUAL 1920 AND MSVC_VERSION LESS 1930)
     # Visual Studio 2019
     set(MSVC_NUM 142)
+  elseif(MSVC_VERSION GREATER_EQUAL 1930 AND MSVC_VERSION LESS 1940)
+    # Visual Studio 2022
+    set(MSVC_NUM 143)
   elseif(MSVC)
     message(FATAL_ERROR "Unsupported Visual C++ compiler used.")
   else()
