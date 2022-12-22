@@ -1891,13 +1891,15 @@ CubismRenderer_CC::~CubismRenderer_CC()
 {
 	CSM_DELETE_SELF(CubismClippingManager_CC, _clippingManager);
 
+	for (csmInt32 i = 0; i < _drawableDrawCommandBuffer.GetSize(); ++i)
+	{
+		CSM_DELETE(_drawableDrawCommandBuffer[i]);
+	}
+	_drawableDrawCommandBuffer.Clear();
+	_textures.clear();
 	if (_offscreenFrameBuffer.IsValid())
 	{
 		_offscreenFrameBuffer.DestroyOffscreenFrame();
-	}
-	for (csmInt32 i = 0; i < _drawableDrawCommandBuffer.GetSize(); ++i)
-	{
-		CSM_DELETE(_drawableDrawCommandBuffer.At(i));
 	}
 }
 
