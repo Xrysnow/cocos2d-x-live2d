@@ -1723,6 +1723,18 @@ void CubismShader_CC::SetupShaderProgram(CubismRenderer_CC* renderer
 			rect->GetBottom() * 2.0f - 1.0f);
 		state->setUniform(shaderSet->UniformBaseColorLocation, &vec4, sizeof(float) * 4);
 
+		if (shaderSet->UniformMultiplyColorLocation)
+		{
+			const Vec4 multiply = { multiplyColor.R, multiplyColor.G, multiplyColor.B, multiplyColor.A };
+			state->setUniform(shaderSet->UniformMultiplyColorLocation, &multiply, sizeof(float) * 4);
+		}
+
+		if (shaderSet->UniformScreenColorLocation)
+		{
+			const Vec4 screen = { screenColor.R, screenColor.G, screenColor.B, screenColor.A };
+			state->setUniform(shaderSet->UniformScreenColorLocation, &screen, sizeof(float) * 4);
+		}
+
 		SRC_COLOR = BlendFactor::ZERO;
 		DST_COLOR = BlendFactor::ONE_MINUS_SRC_COLOR;
 		SRC_ALPHA = BlendFactor::ZERO;
@@ -1800,9 +1812,21 @@ void CubismShader_CC::SetupShaderProgram(CubismRenderer_CC* renderer
 			matrix4x4.GetArray(),
 			sizeof(float) * 16);
 
-		Vec4 vec4 = { baseColor.R, baseColor.G, baseColor.B, baseColor.A };
+		const Vec4 vec4 = { baseColor.R, baseColor.G, baseColor.B, baseColor.A };
 		state->setUniform(shaderSet->UniformBaseColorLocation,
 			&vec4, sizeof(float) * 4);
+
+		if (shaderSet->UniformMultiplyColorLocation)
+		{
+			const Vec4 multiply = { multiplyColor.R, multiplyColor.G, multiplyColor.B, multiplyColor.A };
+			state->setUniform(shaderSet->UniformMultiplyColorLocation, &multiply, sizeof(float) * 4);
+		}
+
+		if (shaderSet->UniformScreenColorLocation)
+		{
+			const Vec4 screen = { screenColor.R, screenColor.G, screenColor.B, screenColor.A };
+			state->setUniform(shaderSet->UniformScreenColorLocation, &screen, sizeof(float) * 4);
+		}
 	}
 
 	state->getVertexLayout()->setLayout(sizeof(csmFloat32) * 4);
