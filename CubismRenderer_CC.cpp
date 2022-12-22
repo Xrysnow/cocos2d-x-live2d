@@ -726,7 +726,7 @@ void CubismShader_CC::ReleaseShaderProgram()
 }
 
 #if defined(CC_PLATFORM_MOBILE)
-#define FRAG_SHADER_HEADER "#version 100\nprecision mediump float;"
+#define FRAG_SHADER_HEADER "#version 100\nprecision mediump float;\n"
 #define VERT_SHADER_HEADER "#version 100\n"
 #else
 #define FRAG_SHADER_HEADER "#version 120\n"
@@ -952,9 +952,14 @@ static const csmChar* FragShaderSrc =
 	"varying vec2 v_texCoord;" //v2f.texcoord
 	"uniform sampler2D s_texture0;" //_MainTex
 	"uniform vec4 u_baseColor;" //v2f.color
+	"uniform vec4 u_multiplyColor;"
+	"uniform vec4 u_screenColor;"
 	"void main()"
 	"{"
-	"vec4 color = texture2D(s_texture0, v_texCoord) * u_baseColor;"
+	"vec4 texColor = texture2D(s_texture0 , v_texCoord);"
+	"texColor.rgb = texColor.rgb * u_multiplyColor.rgb;"
+	"texColor.rgb = texColor.rgb + u_screenColor.rgb - (texColor.rgb * u_screenColor.rgb);"
+	"vec4 color = texColor * u_baseColor;"
 	"gl_FragColor = vec4(color.rgb * color.a, color.a);"
 	"}";
 #else
@@ -963,13 +968,18 @@ layout(location=0) in vec2 v_texCoord;
 layout(std140, binding=1) uniform FSBlock
 {
 	vec4 u_baseColor;
+	vec4 u_multiplyColor;
+	vec4 u_screenColor;
 };
 layout(binding=2) uniform sampler2D s_texture0;
 layout(location=0) out vec4 cc_FragColor;
 
 void main()
 {
-	vec4 color = texture(s_texture0, v_texCoord) * u_baseColor;
+	vec4 texColor = texture(s_texture0 , v_texCoord);
+	texColor.rgb = texColor.rgb * u_multiplyColor.rgb;
+	texColor.rgb = texColor.rgb + u_screenColor.rgb - (texColor.rgb * u_screenColor.rgb);
+	vec4 color = texColor * u_baseColor;
 	cc_FragColor = vec4(color.rgb * color.a, color.a);
 }
 )";
@@ -977,6 +987,8 @@ static const UniformBlock FragShaderSrcBlock = {
 	0,1,"FSBlock",
 	UniformList({
 		{"u_baseColor", Type::FLOAT4, 1},
+		{"u_multiplyColor", Type::FLOAT4, 1},
+		{"u_screenColor", Type::FLOAT4, 1},
 	}),
 	1
 };
@@ -993,10 +1005,15 @@ static const csmChar* FragShaderSrcTegra =
 	"varying vec2 v_texCoord;" //v2f.texcoord
 	"uniform sampler2D s_texture0;" //_MainTex
 	"uniform vec4 u_baseColor;" //v2f.color
+	"uniform vec4 u_multiplyColor;"
+	"uniform vec4 u_screenColor;"
 	"void main()"
 	"{"
-	"vec4 color = texture2D(s_texture0 , v_texCoord) * u_baseColor;"
-	"gl_FragColor = vec4(color.rgb * color.a,  color.a);"
+	"vec4 texColor = texture2D(s_texture0 , v_texCoord);"
+	"texColor.rgb = texColor.rgb * u_multiplyColor.rgb;"
+	"texColor.rgb = texColor.rgb + u_screenColor.rgb - (texColor.rgb * u_screenColor.rgb);"
+	"vec4 color = texColor * u_baseColor;"
+	"gl_FragColor = vec4(color.rgb * color.a, color.a);"
 	"}";
 #endif
 
@@ -1007,9 +1024,14 @@ static const csmChar* FragShaderSrcPremultipliedAlpha =
 	"varying vec2 v_texCoord;" //v2f.texcoord
 	"uniform sampler2D s_texture0;" //_MainTex
 	"uniform vec4 u_baseColor;" //v2f.color
+	"uniform vec4 u_multiplyColor;"
+	"uniform vec4 u_screenColor;"
 	"void main()"
 	"{"
-	"gl_FragColor = texture2D(s_texture0 , v_texCoord) * u_baseColor;"
+	"vec4 texColor = texture2D(s_texture0 , v_texCoord);"
+	"texColor.rgb = texColor.rgb * u_multiplyColor.rgb;"
+	"texColor.rgb = (texColor.rgb + u_screenColor.rgb * texColor.a) - (texColor.rgb * u_screenColor.rgb);"
+	"gl_FragColor = texColor * u_baseColor;"
 	"}";
 #else
 	R"(
@@ -1017,13 +1039,18 @@ layout(location=0) in vec2 v_texCoord;
 layout(std140, binding=1) uniform FSBlock
 {
 	vec4 u_baseColor;
+	vec4 u_multiplyColor;
+	vec4 u_screenColor;
 };
 layout(binding=2) uniform sampler2D s_texture0;
 layout(location=0) out vec4 cc_FragColor;
 
 void main()
 {
-	cc_FragColor = texture(s_texture0, v_texCoord) * u_baseColor;
+	vec4 texColor = texture(s_texture0 , v_texCoord);
+	texColor.rgb = texColor.rgb * u_multiplyColor.rgb;
+	texColor.rgb = (texColor.rgb + u_screenColor.rgb * texColor.a) - (texColor.rgb * u_screenColor.rgb);
+	cc_FragColor = texColor * u_baseColor;
 }
 )";
 #endif
@@ -1035,9 +1062,14 @@ static const csmChar* FragShaderSrcPremultipliedAlphaTegra =
 	"varying vec2 v_texCoord;" //v2f.texcoord
 	"uniform sampler2D s_texture0;" //_MainTex
 	"uniform vec4 u_baseColor;" //v2f.color
+	"uniform vec4 u_multiplyColor;"
+	"uniform vec4 u_screenColor;"	
 	"void main()"
 	"{"
-	"gl_FragColor = texture2D(s_texture0 , v_texCoord) * u_baseColor;"
+	"vec4 texColor = texture2D(s_texture0 , v_texCoord);"
+	"texColor.rgb = texColor.rgb * u_multiplyColor.rgb;"
+	"texColor.rgb = (texColor.rgb + u_screenColor.rgb * texColor.a) - (texColor.rgb * u_screenColor.rgb);"
+	"gl_FragColor = texColor * u_baseColor;"
 	"}";
 #endif
 
@@ -1051,9 +1083,14 @@ static const csmChar* FragShaderSrcMask =
 	"uniform sampler2D s_texture1;"
 	"uniform vec4 u_channelFlag;"
 	"uniform vec4 u_baseColor;"
+	"uniform vec4 u_multiplyColor;"
+	"uniform vec4 u_screenColor;"
 	"void main()"
 	"{"
-	"vec4 col_formask = texture2D(s_texture0 , v_texCoord) * u_baseColor;"
+	"vec4 texColor = texture2D(s_texture0 , v_texCoord);"
+	"texColor.rgb = texColor.rgb * u_multiplyColor.rgb;"
+	"texColor.rgb = texColor.rgb + u_screenColor.rgb - (texColor.rgb * u_screenColor.rgb);"
+	"vec4 col_formask = texColor * u_baseColor;"
 	"col_formask.rgb = col_formask.rgb * col_formask.a ;"
 	"vec4 clipMask = (1.0 - texture2D(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;"
 	"float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;"
@@ -1068,6 +1105,8 @@ layout(std140, binding=1) uniform FSBlock
 {
 	vec4 u_channelFlag;
 	vec4 u_baseColor;
+	vec4 u_multiplyColor;
+	vec4 u_screenColor;
 };
 layout(binding=2) uniform sampler2D s_texture0;
 layout(binding=3) uniform sampler2D s_texture1;
@@ -1075,7 +1114,10 @@ layout(location=0) out vec4 cc_FragColor;
 
 void main()
 {
-	vec4 col_formask = texture(s_texture0 , v_texCoord) * u_baseColor;
+	vec4 texColor = texture(s_texture0 , v_texCoord);
+	texColor.rgb = texColor.rgb * u_multiplyColor.rgb;
+	texColor.rgb = texColor.rgb + u_screenColor.rgb - (texColor.rgb * u_screenColor.rgb);
+	vec4 col_formask = texColor * u_baseColor;
 	col_formask.rgb = col_formask.rgb * col_formask.a ;
 	vec4 clipMask = (1.0 - texture(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;
 	float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;
@@ -1088,6 +1130,8 @@ static const UniformBlock FragShaderSrcMaskBlock = {
 	UniformList({
 		{"u_channelFlag", Type::FLOAT4, 1},
 		{"u_baseColor", Type::FLOAT4, 1},
+		{"u_multiplyColor", Type::FLOAT4, 1},
+		{"u_screenColor", Type::FLOAT4, 1},
 	}),
 	1
 };
@@ -1109,9 +1153,14 @@ static const csmChar* FragShaderSrcMaskTegra =
 	"uniform sampler2D s_texture1;"
 	"uniform vec4 u_channelFlag;"
 	"uniform vec4 u_baseColor;"
+	"uniform vec4 u_multiplyColor;"
+	"uniform vec4 u_screenColor;"
 	"void main()"
 	"{"
-	"vec4 col_formask = texture2D(s_texture0 , v_texCoord) * u_baseColor;"
+	"vec4 texColor = texture2D(s_texture0 , v_texCoord);"
+	"texColor.rgb = texColor.rgb * u_multiplyColor.rgb;"
+	"texColor.rgb = texColor.rgb + u_screenColor.rgb - (texColor.rgb * u_screenColor.rgb);"
+	"vec4 col_formask = texColor * u_baseColor;"
 	"col_formask.rgb = col_formask.rgb  * col_formask.a ;"
 	"vec4 clipMask = (1.0 - texture2D(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;"
 	"float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;"
@@ -1130,9 +1179,14 @@ static const csmChar* FragShaderSrcMaskInverted =
 	"uniform sampler2D s_texture1;"
 	"uniform vec4 u_channelFlag;"
 	"uniform vec4 u_baseColor;"
+	"uniform vec4 u_multiplyColor;"
+	"uniform vec4 u_screenColor;"
 	"void main()"
 	"{"
-	"vec4 col_formask = texture2D(s_texture0 , v_texCoord) * u_baseColor;"
+	"vec4 texColor = texture2D(s_texture0 , v_texCoord);"
+	"texColor.rgb = texColor.rgb * u_multiplyColor.rgb;"
+	"texColor.rgb = texColor.rgb + u_screenColor.rgb - (texColor.rgb * u_screenColor.rgb);"
+	"vec4 col_formask = texColor * u_baseColor;"
 	"col_formask.rgb = col_formask.rgb * col_formask.a ;"
 	"vec4 clipMask = (1.0 - texture2D(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;"
 	"float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;"
@@ -1147,6 +1201,8 @@ layout(std140, binding=1) uniform FSBlock
 {
 	vec4 u_channelFlag;
 	vec4 u_baseColor;
+	vec4 u_multiplyColor;
+	vec4 u_screenColor;
 };
 layout(binding=2) uniform sampler2D s_texture0;
 layout(binding=3) uniform sampler2D s_texture1;
@@ -1154,7 +1210,10 @@ layout(location=0) out vec4 cc_FragColor;
 
 void main()
 {
-	vec4 col_formask = texture(s_texture0 , v_texCoord) * u_baseColor;
+	vec4 texColor = texture(s_texture0 , v_texCoord);
+	texColor.rgb = texColor.rgb * u_multiplyColor.rgb;
+	texColor.rgb = texColor.rgb + u_screenColor.rgb - (texColor.rgb * u_screenColor.rgb);
+	vec4 col_formask = texColor * u_baseColor;
 	col_formask.rgb = col_formask.rgb * col_formask.a ;
 	vec4 clipMask = (1.0 - texture(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;
 	float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;
@@ -1174,9 +1233,14 @@ static const csmChar* FragShaderSrcMaskInvertedTegra =
 	"uniform sampler2D s_texture1;"
 	"uniform vec4 u_channelFlag;"
 	"uniform vec4 u_baseColor;"
+	"uniform vec4 u_multiplyColor;"
+	"uniform vec4 u_screenColor;"
 	"void main()"
 	"{"
-	"vec4 col_formask = texture2D(s_texture0 , v_texCoord) * u_baseColor;"
+	"vec4 texColor = texture2D(s_texture0 , v_texCoord);"
+	"texColor.rgb = texColor.rgb * u_multiplyColor.rgb;"
+	"texColor.rgb = texColor.rgb + u_screenColor.rgb - (texColor.rgb * u_screenColor.rgb);"
+	"vec4 col_formask = texColor * u_baseColor;"
 	"col_formask.rgb = col_formask.rgb  * col_formask.a ;"
 	"vec4 clipMask = (1.0 - texture2D(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;"
 	"float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;"
@@ -1195,9 +1259,14 @@ static const csmChar* FragShaderSrcMaskPremultipliedAlpha =
 	"uniform sampler2D s_texture1;"
 	"uniform vec4 u_channelFlag;"
 	"uniform vec4 u_baseColor;"
+	"uniform vec4 u_multiplyColor;"
+	"uniform vec4 u_screenColor;"
 	"void main()"
 	"{"
-	"vec4 col_formask = texture2D(s_texture0 , v_texCoord) * u_baseColor;"
+	"vec4 texColor = texture2D(s_texture0 , v_texCoord);"
+	"texColor.rgb = texColor.rgb * u_multiplyColor.rgb;"
+	"texColor.rgb = (texColor.rgb + u_screenColor.rgb * texColor.a) - (texColor.rgb * u_screenColor.rgb);"
+	"vec4 col_formask = texColor * u_baseColor;"
 	"vec4 clipMask = (1.0 - texture2D(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;"
 	"float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;"
 	"col_formask = col_formask * maskVal;"
@@ -1211,6 +1280,8 @@ layout(std140, binding=1) uniform FSBlock
 {
 	vec4 u_channelFlag;
 	vec4 u_baseColor;
+	vec4 u_multiplyColor;
+	vec4 u_screenColor;
 };
 layout(binding=2) uniform sampler2D s_texture0;
 layout(binding=3) uniform sampler2D s_texture1;
@@ -1218,7 +1289,10 @@ layout(location=0) out vec4 cc_FragColor;
 
 void main()
 {
-	vec4 col_formask = texture(s_texture0 , v_texCoord) * u_baseColor;
+	vec4 texColor = texture(s_texture0 , v_texCoord);
+	texColor.rgb = texColor.rgb * u_multiplyColor.rgb;
+	texColor.rgb = (texColor.rgb + u_screenColor.rgb * texColor.a) - (texColor.rgb * u_screenColor.rgb);
+	vec4 col_formask = texColor * u_baseColor;
 	vec4 clipMask = (1.0 - texture(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;
 	float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;
 	col_formask = col_formask * maskVal;
@@ -1237,9 +1311,14 @@ static const csmChar* FragShaderSrcMaskPremultipliedAlphaTegra =
 	"uniform sampler2D s_texture1;"
 	"uniform vec4 u_channelFlag;"
 	"uniform vec4 u_baseColor;"
+	"uniform vec4 u_multiplyColor;"
+	"uniform vec4 u_screenColor;"
 	"void main()"
 	"{"
-	"vec4 col_formask = texture2D(s_texture0 , v_texCoord) * u_baseColor;"
+	"vec4 texColor = texture2D(s_texture0 , v_texCoord);"
+	"texColor.rgb = texColor.rgb * u_multiplyColor.rgb;"
+	"texColor.rgb = (texColor.rgb + u_screenColor.rgb * texColor.a) - (texColor.rgb * u_screenColor.rgb);"
+	"vec4 col_formask = texColor * u_baseColor;"
 	"vec4 clipMask = (1.0 - texture2D(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;"
 	"float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;"
 	"col_formask = col_formask * maskVal;"
@@ -1257,9 +1336,14 @@ static const csmChar* FragShaderSrcMaskInvertedPremultipliedAlpha =
 	"uniform sampler2D s_texture1;"
 	"uniform vec4 u_channelFlag;"
 	"uniform vec4 u_baseColor;"
+	"uniform vec4 u_multiplyColor;"
+	"uniform vec4 u_screenColor;"
 	"void main()"
 	"{"
-	"vec4 col_formask = texture2D(s_texture0 , v_texCoord) * u_baseColor;"
+	"vec4 texColor = texture2D(s_texture0 , v_texCoord);"
+	"texColor.rgb = texColor.rgb * u_multiplyColor.rgb;"
+	"texColor.rgb = (texColor.rgb + u_screenColor.rgb * texColor.a) - (texColor.rgb * u_screenColor.rgb);"
+	"vec4 col_formask = texColor * u_baseColor;"
 	"vec4 clipMask = (1.0 - texture2D(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;"
 	"float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;"
 	"col_formask = col_formask * (1.0 - maskVal);"
@@ -1273,6 +1357,8 @@ layout(std140, binding=1) uniform FSBlock
 {
 	vec4 u_channelFlag;
 	vec4 u_baseColor;
+	vec4 u_multiplyColor;
+	vec4 u_screenColor;
 };
 layout(binding=2) uniform sampler2D s_texture0;
 layout(binding=3) uniform sampler2D s_texture1;
@@ -1280,7 +1366,10 @@ layout(location=0) out vec4 cc_FragColor;
 
 void main()
 {
-	vec4 col_formask = texture(s_texture0 , v_texCoord) * u_baseColor;
+	vec4 texColor = texture(s_texture0 , v_texCoord);
+	texColor.rgb = texColor.rgb * u_multiplyColor.rgb;
+	texColor.rgb = (texColor.rgb + u_screenColor.rgb * texColor.a) - (texColor.rgb * u_screenColor.rgb);
+	vec4 col_formask = texColor * u_baseColor;
 	vec4 clipMask = (1.0 - texture(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;
 	float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;
 	col_formask = col_formask * (1.0 - maskVal);
@@ -1299,9 +1388,14 @@ static const csmChar* FragShaderSrcMaskInvertedPremultipliedAlphaTegra =
 	"uniform sampler2D s_texture1;"
 	"uniform vec4 u_channelFlag;"
 	"uniform vec4 u_baseColor;"
+	"uniform vec4 u_multiplyColor;"
+	"uniform vec4 u_screenColor;"
 	"void main()"
 	"{"
-	"vec4 col_formask = texture2D(s_texture0 , v_texCoord) * u_baseColor;"
+	"vec4 texColor = texture2D(s_texture0 , v_texCoord);"
+	"texColor.rgb = texColor.rgb * u_multiplyColor.rgb;"
+	"texColor.rgb = (texColor.rgb + u_screenColor.rgb * texColor.a) - (texColor.rgb * u_screenColor.rgb);"
+	"vec4 col_formask = texColor * u_baseColor;"
 	"vec4 clipMask = (1.0 - texture2D(s_texture1, v_clipPos.xy / v_clipPos.w)) * u_channelFlag;"
 	"float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;"
 	"col_formask = col_formask * (1.0 - maskVal);"
