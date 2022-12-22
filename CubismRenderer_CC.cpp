@@ -1438,6 +1438,32 @@ void CubismShader_CC::SetExtShaderMode(csmBool extMode, csmBool extPAMode) {
 }
 #endif
 
+#ifdef CC_USE_GFX
+static cocos2d::backend::Program* LoadGFXProgram(
+	const std::string& name,
+	const std::string& vs, const std::string& fs,
+	const UniformBlock& vsb, const UniformBlock& fsb,
+	const UniformSamplerTextureList& textures)
+{
+	using ShaderStage = DeviceGFX::ShaderStage;
+	using ShaderStageFlagBit = DeviceGFX::ShaderStageFlagBit;
+	const auto device = (DeviceGFX*)backend::Device::getInstance();
+	DeviceGFX::ShaderInfo info;
+	info.attributes = {
+		DeviceGFX::Attribute{"a_position",VertexFormat::FLOAT2,false,0,false,0},
+		DeviceGFX::Attribute{"a_texCoord",VertexFormat::FLOAT2,false,0,false,1},
+	};
+	info.name = name;
+	info.stages = {
+		ShaderStage{ShaderStageFlagBit::VERTEX, vs},
+		ShaderStage{ShaderStageFlagBit::FRAGMENT, fs},
+	};
+	info.blocks = { vsb, fsb };
+	info.samplerTextures = textures;
+	return device->newProgram(info);
+}
+#endif
+
 void CubismShader_CC::GenerateShaders()
 {
 	for (csmInt32 i = 0; i < ShaderCount; i++)
@@ -1497,77 +1523,41 @@ void CubismShader_CC::GenerateShaders()
 	_shaderSets[5]->ShaderProgram = LoadShaderProgram(VertShaderSrcMasked, FragShaderSrcMaskPremultipliedAlpha);
 	_shaderSets[6]->ShaderProgram = LoadShaderProgram(VertShaderSrcMasked, FragShaderSrcMaskInvertedPremultipliedAlpha);
 #else
-	const auto device = (DeviceGFX*)backend::Device::getInstance();
-	using ShaderStage = DeviceGFX::ShaderStage;
-	using ShaderStageFlagBit = DeviceGFX::ShaderStageFlagBit;
-	DeviceGFX::ShaderInfo info;
-	info.attributes = {
-		DeviceGFX::Attribute{"a_position",VertexFormat::FLOAT2,false,0,false,0},
-		DeviceGFX::Attribute{"a_texCoord",VertexFormat::FLOAT2,false,0,false,1},
-	};
-	//
-	info.name = "CSM_Shader0";
-	info.stages = {
-		ShaderStage{ShaderStageFlagBit::VERTEX, VertShaderSrcSetupMask},
-		ShaderStage{ShaderStageFlagBit::FRAGMENT, FragShaderSrcSetupMask},
-	};
-	info.blocks = { VertShaderSrcSetupMaskBlock, FragShaderSrcSetupMaskBlock };
-	info.samplerTextures = FragShaderSrcSetupMaskTextures;
-	_shaderSets[0]->ShaderProgram = device->newProgram(info);
-	//
-	info.name = "CSM_Shader1";
-	info.stages = {
-		ShaderStage{ShaderStageFlagBit::VERTEX, VertShaderSrc},
-		ShaderStage{ShaderStageFlagBit::FRAGMENT, FragShaderSrc},
-	};
-	info.blocks = { VertShaderSrcBlock, FragShaderSrcBlock };
-	info.samplerTextures = FragShaderSrcTextures;
-	_shaderSets[1]->ShaderProgram = device->newProgram(info);
-	//
-	info.name = "CSM_Shader2";
-	info.stages = {
-		ShaderStage{ShaderStageFlagBit::VERTEX, VertShaderSrcMasked},
-		ShaderStage{ShaderStageFlagBit::FRAGMENT, FragShaderSrcMask},
-	};
-	info.blocks = { VertShaderSrcMaskedBlock, FragShaderSrcMaskBlock };
-	info.samplerTextures = FragShaderSrcMaskTextures;
-	_shaderSets[2]->ShaderProgram = device->newProgram(info);
-	//
-	info.name = "CSM_Shader3";
-	info.stages = {
-		ShaderStage{ShaderStageFlagBit::VERTEX, VertShaderSrcMasked},
-		ShaderStage{ShaderStageFlagBit::FRAGMENT, FragShaderSrcMaskInverted},
-	};
-	info.blocks = { VertShaderSrcMaskedBlock, FragShaderSrcMaskBlock };
-	info.samplerTextures = FragShaderSrcMaskTextures;
-	_shaderSets[3]->ShaderProgram = device->newProgram(info);
-	//
-	info.name = "CSM_Shader4";
-	info.stages = {
-		ShaderStage{ShaderStageFlagBit::VERTEX, VertShaderSrc},
-		ShaderStage{ShaderStageFlagBit::FRAGMENT, FragShaderSrcPremultipliedAlpha},
-	};
-	info.blocks = { VertShaderSrcBlock, FragShaderSrcBlock };
-	info.samplerTextures = FragShaderSrcTextures;
-	_shaderSets[4]->ShaderProgram = device->newProgram(info);
-	//
-	info.name = "CSM_Shader5";
-	info.stages = {
-		ShaderStage{ShaderStageFlagBit::VERTEX, VertShaderSrcMasked},
-		ShaderStage{ShaderStageFlagBit::FRAGMENT, FragShaderSrcMaskPremultipliedAlpha},
-	};
-	info.blocks = { VertShaderSrcMaskedBlock, FragShaderSrcMaskBlock };
-	info.samplerTextures = FragShaderSrcMaskTextures;
-	_shaderSets[5]->ShaderProgram = device->newProgram(info);
-	//
-	info.name = "CSM_Shader6";
-	info.stages = {
-		ShaderStage{ShaderStageFlagBit::VERTEX, VertShaderSrcMasked},
-		ShaderStage{ShaderStageFlagBit::FRAGMENT, FragShaderSrcMaskInvertedPremultipliedAlpha},
-	};
-	info.blocks = { VertShaderSrcMaskedBlock, FragShaderSrcMaskBlock };
-	info.samplerTextures = FragShaderSrcMaskTextures;
-	_shaderSets[6]->ShaderProgram = device->newProgram(info);
+	_shaderSets[0]->ShaderProgram = LoadGFXProgram(
+		"CSM_Shader0", 
+		VertShaderSrcSetupMask, FragShaderSrcSetupMask,
+		VertShaderSrcSetupMaskBlock, FragShaderSrcSetupMaskBlock,
+		FragShaderSrcSetupMaskTextures);
+	_shaderSets[1]->ShaderProgram = LoadGFXProgram(
+		"CSM_Shader1",
+		VertShaderSrc, FragShaderSrc,
+		VertShaderSrcBlock, FragShaderSrcBlock,
+		FragShaderSrcTextures);
+	_shaderSets[2]->ShaderProgram = LoadGFXProgram(
+		"CSM_Shader2",
+		VertShaderSrcMasked, FragShaderSrcMask,
+		VertShaderSrcMaskedBlock, FragShaderSrcMaskBlock,
+		FragShaderSrcMaskTextures);
+	_shaderSets[3]->ShaderProgram = LoadGFXProgram(
+		"CSM_Shader3",
+		VertShaderSrcMasked, FragShaderSrcMaskInverted,
+		VertShaderSrcMaskedBlock, FragShaderSrcMaskBlock,
+		FragShaderSrcMaskTextures);
+	_shaderSets[4]->ShaderProgram = LoadGFXProgram(
+		"CSM_Shader4",
+		VertShaderSrc, FragShaderSrcPremultipliedAlpha,
+		VertShaderSrcBlock, FragShaderSrcBlock,
+		FragShaderSrcTextures);
+	_shaderSets[5]->ShaderProgram = LoadGFXProgram(
+		"CSM_Shader5",
+		VertShaderSrcMasked, FragShaderSrcMaskPremultipliedAlpha,
+		VertShaderSrcMaskedBlock, FragShaderSrcMaskBlock,
+		FragShaderSrcMaskTextures);
+	_shaderSets[6]->ShaderProgram = LoadGFXProgram(
+		"CSM_Shader6",
+		VertShaderSrcMasked, FragShaderSrcMaskInvertedPremultipliedAlpha,
+		VertShaderSrcMaskedBlock, FragShaderSrcMaskBlock,
+		FragShaderSrcMaskTextures);
 #endif
 
 	// 加算も通常と同じシェーダーを利用する
@@ -1587,176 +1577,89 @@ void CubismShader_CC::GenerateShaders()
 	_shaderSets[18]->ShaderProgram = _shaderSets[6]->ShaderProgram;
 #endif
 
+	for (int i = 0; i <= 18; ++i)
+	{
+		_shaderSets[i]->AttributePositionLocation = _shaderSets[i]->ShaderProgram->getAttributeLocation("a_position");
+		_shaderSets[i]->AttributeTexCoordLocation = _shaderSets[i]->ShaderProgram->getAttributeLocation("a_texCoord");
+	}
+
+	auto setLoaction = [&](int i, const std::set<std::string>& uniforms)
+	{
+		const auto ss = _shaderSets[i];
+		const auto progrgam = ss->ShaderProgram;
+		if (uniforms.count("s_texture0"))
+			ss->SamplerTexture0Location = progrgam->getUniformLocation("s_texture0");
+		if (uniforms.count("s_texture1"))
+			ss->SamplerTexture1Location = progrgam->getUniformLocation("s_texture1");
+		if (uniforms.count("u_matrix"))
+			ss->UniformMatrixLocation = progrgam->getUniformLocation("u_matrix");
+		if (uniforms.count("u_clipMatrix"))
+			ss->UniformClipMatrixLocation = progrgam->getUniformLocation("u_clipMatrix");
+		if (uniforms.count("u_baseColor"))
+			ss->UniformBaseColorLocation = progrgam->getUniformLocation("u_baseColor");
+		if (uniforms.count("u_channelFlag"))
+			ss->UnifromChannelFlagLocation = progrgam->getUniformLocation("u_channelFlag");
+		//NOTE: _shaderSets[0] dose not have these
+		ss->UniformMultiplyColorLocation = progrgam->getUniformLocation("u_multiplyColor");
+		ss->UniformScreenColorLocation = progrgam->getUniformLocation("u_screenColor");
+	};
 
 	// SetupMask
-	_shaderSets[0]->AttributePositionLocation = _shaderSets[0]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[0]->AttributeTexCoordLocation = _shaderSets[0]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[0]->SamplerTexture0Location = _shaderSets[0]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[0]->UniformClipMatrixLocation = _shaderSets[0]->ShaderProgram->getUniformLocation("u_clipMatrix");
-	_shaderSets[0]->UnifromChannelFlagLocation = _shaderSets[0]->ShaderProgram->getUniformLocation("u_channelFlag");
-	_shaderSets[0]->UniformBaseColorLocation = _shaderSets[0]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(0, {"s_texture0","u_clipMatrix","u_channelFlag","u_baseColor" });
 
 	// 通常
-	_shaderSets[1]->AttributePositionLocation = _shaderSets[1]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[1]->AttributeTexCoordLocation = _shaderSets[1]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[1]->SamplerTexture0Location = _shaderSets[1]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[1]->UniformMatrixLocation = _shaderSets[1]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[1]->UniformBaseColorLocation = _shaderSets[1]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(1, { "s_texture0","u_matrix","u_baseColor" });
 
 	// 通常（クリッピング）
-	_shaderSets[2]->AttributePositionLocation = _shaderSets[2]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[2]->AttributeTexCoordLocation = _shaderSets[2]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[2]->SamplerTexture0Location = _shaderSets[2]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[2]->SamplerTexture1Location = _shaderSets[2]->ShaderProgram->getUniformLocation("s_texture1");
-	_shaderSets[2]->UniformMatrixLocation = _shaderSets[2]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[2]->UniformClipMatrixLocation = _shaderSets[2]->ShaderProgram->getUniformLocation("u_clipMatrix");
-	_shaderSets[2]->UnifromChannelFlagLocation = _shaderSets[2]->ShaderProgram->getUniformLocation("u_channelFlag");
-	_shaderSets[2]->UniformBaseColorLocation = _shaderSets[2]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(2, { "s_texture0","s_texture1","u_matrix","u_clipMatrix","u_channelFlag","u_baseColor" });
 
 	// 通常（クリッピング・反転）
-	_shaderSets[3]->AttributePositionLocation = _shaderSets[3]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[3]->AttributeTexCoordLocation = _shaderSets[3]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[3]->SamplerTexture0Location = _shaderSets[3]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[3]->SamplerTexture1Location = _shaderSets[3]->ShaderProgram->getUniformLocation("s_texture1");
-	_shaderSets[3]->UniformMatrixLocation = _shaderSets[3]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[3]->UniformClipMatrixLocation = _shaderSets[3]->ShaderProgram->getUniformLocation("u_clipMatrix");
-	_shaderSets[3]->UnifromChannelFlagLocation = _shaderSets[3]->ShaderProgram->getUniformLocation("u_channelFlag");
-	_shaderSets[3]->UniformBaseColorLocation = _shaderSets[3]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(3, { "s_texture0","s_texture1","u_matrix","u_clipMatrix","u_channelFlag","u_baseColor" });
 
 	// 通常（PremultipliedAlpha）
-	_shaderSets[4]->AttributePositionLocation = _shaderSets[4]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[4]->AttributeTexCoordLocation = _shaderSets[4]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[4]->SamplerTexture0Location = _shaderSets[4]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[4]->UniformMatrixLocation = _shaderSets[4]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[4]->UniformBaseColorLocation = _shaderSets[4]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(4, { "s_texture0","u_matrix","u_baseColor" });
 
 	// 通常（クリッピング、PremultipliedAlpha）
-	_shaderSets[5]->AttributePositionLocation = _shaderSets[5]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[5]->AttributeTexCoordLocation = _shaderSets[5]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[5]->SamplerTexture0Location = _shaderSets[5]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[5]->SamplerTexture1Location = _shaderSets[5]->ShaderProgram->getUniformLocation("s_texture1");
-	_shaderSets[5]->UniformMatrixLocation = _shaderSets[5]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[5]->UniformClipMatrixLocation = _shaderSets[5]->ShaderProgram->getUniformLocation("u_clipMatrix");
-	_shaderSets[5]->UnifromChannelFlagLocation = _shaderSets[5]->ShaderProgram->getUniformLocation("u_channelFlag");
-	_shaderSets[5]->UniformBaseColorLocation = _shaderSets[5]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(5, { "s_texture0","s_texture1","u_matrix","u_clipMatrix","u_channelFlag","u_baseColor" });
 
 	// 通常（クリッピング・反転、PremultipliedAlpha）
-	_shaderSets[6]->AttributePositionLocation = _shaderSets[6]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[6]->AttributeTexCoordLocation = _shaderSets[6]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[6]->SamplerTexture0Location = _shaderSets[6]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[6]->SamplerTexture1Location = _shaderSets[6]->ShaderProgram->getUniformLocation("s_texture1");
-	_shaderSets[6]->UniformMatrixLocation = _shaderSets[6]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[6]->UniformClipMatrixLocation = _shaderSets[6]->ShaderProgram->getUniformLocation("u_clipMatrix");
-	_shaderSets[6]->UnifromChannelFlagLocation = _shaderSets[6]->ShaderProgram->getUniformLocation("u_channelFlag");
-	_shaderSets[6]->UniformBaseColorLocation = _shaderSets[6]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(6, { "s_texture0","s_texture1","u_matrix","u_clipMatrix","u_channelFlag","u_baseColor" });
 
 	// 加算
-	_shaderSets[7]->AttributePositionLocation = _shaderSets[7]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[7]->AttributeTexCoordLocation = _shaderSets[7]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[7]->SamplerTexture0Location = _shaderSets[7]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[7]->UniformMatrixLocation = _shaderSets[7]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[7]->UniformBaseColorLocation = _shaderSets[7]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(7, { "s_texture0","u_matrix","u_baseColor" });
 
 	// 加算（クリッピング）
-	_shaderSets[8]->AttributePositionLocation = _shaderSets[8]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[8]->AttributeTexCoordLocation = _shaderSets[8]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[8]->SamplerTexture0Location = _shaderSets[8]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[8]->SamplerTexture1Location = _shaderSets[8]->ShaderProgram->getUniformLocation("s_texture1");
-	_shaderSets[8]->UniformMatrixLocation = _shaderSets[8]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[8]->UniformClipMatrixLocation = _shaderSets[8]->ShaderProgram->getUniformLocation("u_clipMatrix");
-	_shaderSets[8]->UnifromChannelFlagLocation = _shaderSets[8]->ShaderProgram->getUniformLocation("u_channelFlag");
-	_shaderSets[8]->UniformBaseColorLocation = _shaderSets[8]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(8, { "s_texture0","s_texture1","u_matrix","u_clipMatrix","u_channelFlag","u_baseColor" });
 
 	// 加算（クリッピング・反転）
-	_shaderSets[9]->AttributePositionLocation = _shaderSets[9]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[9]->AttributeTexCoordLocation = _shaderSets[9]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[9]->SamplerTexture0Location = _shaderSets[9]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[9]->SamplerTexture1Location = _shaderSets[9]->ShaderProgram->getUniformLocation("s_texture1");
-	_shaderSets[9]->UniformMatrixLocation = _shaderSets[9]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[9]->UniformClipMatrixLocation = _shaderSets[9]->ShaderProgram->getUniformLocation("u_clipMatrix");
-	_shaderSets[9]->UnifromChannelFlagLocation = _shaderSets[9]->ShaderProgram->getUniformLocation("u_channelFlag");
-	_shaderSets[9]->UniformBaseColorLocation = _shaderSets[9]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(9, { "s_texture0","s_texture1","u_matrix","u_clipMatrix","u_channelFlag","u_baseColor" });
 
 	// 加算（PremultipliedAlpha）
-	_shaderSets[10]->AttributePositionLocation = _shaderSets[10]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[10]->AttributeTexCoordLocation = _shaderSets[10]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[10]->SamplerTexture0Location = _shaderSets[10]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[10]->UniformMatrixLocation = _shaderSets[10]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[10]->UniformBaseColorLocation = _shaderSets[10]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(10, { "s_texture0","u_matrix","u_baseColor" });
 
 	// 加算（クリッピング、PremultipliedAlpha）
-	_shaderSets[11]->AttributePositionLocation = _shaderSets[11]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[11]->AttributeTexCoordLocation = _shaderSets[11]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[11]->SamplerTexture0Location = _shaderSets[11]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[11]->SamplerTexture1Location = _shaderSets[11]->ShaderProgram->getUniformLocation("s_texture1");
-	_shaderSets[11]->UniformMatrixLocation = _shaderSets[11]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[11]->UniformClipMatrixLocation = _shaderSets[11]->ShaderProgram->getUniformLocation("u_clipMatrix");
-	_shaderSets[11]->UnifromChannelFlagLocation = _shaderSets[11]->ShaderProgram->getUniformLocation("u_channelFlag");
-	_shaderSets[11]->UniformBaseColorLocation = _shaderSets[11]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(11, { "s_texture0","s_texture1","u_matrix","u_clipMatrix","u_channelFlag","u_baseColor" });
 
 	// 加算（クリッピング・反転、PremultipliedAlpha）
-	_shaderSets[12]->AttributePositionLocation = _shaderSets[12]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[12]->AttributeTexCoordLocation = _shaderSets[12]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[12]->SamplerTexture0Location = _shaderSets[12]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[12]->SamplerTexture1Location = _shaderSets[12]->ShaderProgram->getUniformLocation("s_texture1");
-	_shaderSets[12]->UniformMatrixLocation = _shaderSets[12]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[12]->UniformClipMatrixLocation = _shaderSets[12]->ShaderProgram->getUniformLocation("u_clipMatrix");
-	_shaderSets[12]->UnifromChannelFlagLocation = _shaderSets[12]->ShaderProgram->getUniformLocation("u_channelFlag");
-	_shaderSets[12]->UniformBaseColorLocation = _shaderSets[12]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(12, { "s_texture0","s_texture1","u_matrix","u_clipMatrix","u_channelFlag","u_baseColor" });
 
 	// 乗算
-	_shaderSets[13]->AttributePositionLocation = _shaderSets[13]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[13]->AttributeTexCoordLocation = _shaderSets[13]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[13]->SamplerTexture0Location = _shaderSets[13]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[13]->UniformMatrixLocation = _shaderSets[13]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[13]->UniformBaseColorLocation = _shaderSets[13]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(13, { "s_texture0","u_matrix","u_baseColor" });
 
 	// 乗算（クリッピング）
-	_shaderSets[14]->AttributePositionLocation = _shaderSets[14]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[14]->AttributeTexCoordLocation = _shaderSets[14]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[14]->SamplerTexture0Location = _shaderSets[14]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[14]->SamplerTexture1Location = _shaderSets[14]->ShaderProgram->getUniformLocation("s_texture1");
-	_shaderSets[14]->UniformMatrixLocation = _shaderSets[14]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[14]->UniformClipMatrixLocation = _shaderSets[14]->ShaderProgram->getUniformLocation("u_clipMatrix");
-	_shaderSets[14]->UnifromChannelFlagLocation = _shaderSets[14]->ShaderProgram->getUniformLocation("u_channelFlag");
-	_shaderSets[14]->UniformBaseColorLocation = _shaderSets[14]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(14, { "s_texture0","s_texture1","u_matrix","u_clipMatrix","u_channelFlag","u_baseColor" });
 
 	// 乗算（クリッピング・反転）
-	_shaderSets[15]->AttributePositionLocation = _shaderSets[15]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[15]->AttributeTexCoordLocation = _shaderSets[15]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[15]->SamplerTexture0Location = _shaderSets[15]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[15]->SamplerTexture1Location = _shaderSets[15]->ShaderProgram->getUniformLocation("s_texture1");
-	_shaderSets[15]->UniformMatrixLocation = _shaderSets[15]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[15]->UniformClipMatrixLocation = _shaderSets[15]->ShaderProgram->getUniformLocation("u_clipMatrix");
-	_shaderSets[15]->UnifromChannelFlagLocation = _shaderSets[15]->ShaderProgram->getUniformLocation("u_channelFlag");
-	_shaderSets[15]->UniformBaseColorLocation = _shaderSets[15]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(15, { "s_texture0","s_texture1","u_matrix","u_clipMatrix","u_channelFlag","u_baseColor" });
 
 	// 乗算（PremultipliedAlpha）
-	_shaderSets[16]->AttributePositionLocation = _shaderSets[16]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[16]->AttributeTexCoordLocation = _shaderSets[16]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[16]->SamplerTexture0Location = _shaderSets[16]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[16]->UniformMatrixLocation = _shaderSets[16]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[16]->UniformBaseColorLocation = _shaderSets[16]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(16, { "s_texture0","u_matrix","u_baseColor" });
 
 	// 乗算（クリッピング、PremultipliedAlpha）
-	_shaderSets[17]->AttributePositionLocation = _shaderSets[17]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[17]->AttributeTexCoordLocation = _shaderSets[17]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[17]->SamplerTexture0Location = _shaderSets[17]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[17]->SamplerTexture1Location = _shaderSets[17]->ShaderProgram->getUniformLocation("s_texture1");
-	_shaderSets[17]->UniformMatrixLocation = _shaderSets[17]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[17]->UniformClipMatrixLocation = _shaderSets[17]->ShaderProgram->getUniformLocation("u_clipMatrix");
-	_shaderSets[17]->UnifromChannelFlagLocation = _shaderSets[17]->ShaderProgram->getUniformLocation("u_channelFlag");
-	_shaderSets[17]->UniformBaseColorLocation = _shaderSets[17]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(17, { "s_texture0","s_texture1","u_matrix","u_clipMatrix","u_channelFlag","u_baseColor" });
 
 	// 乗算（クリッピング・反転、PremultipliedAlpha）
-	_shaderSets[18]->AttributePositionLocation = _shaderSets[18]->ShaderProgram->getAttributeLocation("a_position");
-	_shaderSets[18]->AttributeTexCoordLocation = _shaderSets[18]->ShaderProgram->getAttributeLocation("a_texCoord");
-	_shaderSets[18]->SamplerTexture0Location = _shaderSets[18]->ShaderProgram->getUniformLocation("s_texture0");
-	_shaderSets[18]->SamplerTexture1Location = _shaderSets[18]->ShaderProgram->getUniformLocation("s_texture1");
-	_shaderSets[18]->UniformMatrixLocation = _shaderSets[18]->ShaderProgram->getUniformLocation("u_matrix");
-	_shaderSets[18]->UniformClipMatrixLocation = _shaderSets[18]->ShaderProgram->getUniformLocation("u_clipMatrix");
-	_shaderSets[18]->UnifromChannelFlagLocation = _shaderSets[18]->ShaderProgram->getUniformLocation("u_channelFlag");
-	_shaderSets[18]->UniformBaseColorLocation = _shaderSets[18]->ShaderProgram->getUniformLocation("u_baseColor");
+	setLoaction(18, { "s_texture0","s_texture1","u_matrix","u_clipMatrix","u_channelFlag","u_baseColor" });
 }
 
 void CubismShader_CC::SetupShaderProgram(CubismRenderer_CC* renderer
