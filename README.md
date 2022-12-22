@@ -1,10 +1,10 @@
 # cocos2d-x-live2d
 
-Live2D for [cocos2d-x](https://github.com/cocos2d/cocos2d-x) v4.
+This project provides Live2D support for [cocos2d-x](https://github.com/cocos2d/cocos2d-x) v4 and [this project](https://github.com/Xrysnow/cocos2d-x).
 
-You need to download Cubism SDK for Native from [here](https://www.live2d.com/en/download/cubism-sdk/download-native) and copy files in `Core` folder (in the SDK) to `Core` folder (this project).
+You need to download Cubism SDK for Native from [here](https://www.live2d.com/en/download/cubism-sdk/download-native) and copy files in `Core` folder in the SDK to `Core` folder in this project. For license of usage, please check [here](https://github.com/Live2D/CubismNativeSamples/blob/develop/LICENSE.md).
 
-This project is base on [Cubism Native Samples](https://github.com/Live2D/CubismNativeSamples) and published under [Live2D Open Software License](http://www.live2d.com/eula/live2d-open-software-license-agreement_en.html).
+This project is base on [Cubism Native Samples](https://github.com/Live2D/CubismNativeSamples) and published under [Live2D Open Software License](https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html).
 
 ### Note
 
@@ -26,4 +26,4 @@ model:addClickEventListener(function()
 end)
 ```
 
-Remember to call `l2d::Framework::end()` to end the framework.
+Remember to call `l2d::Framework::end()` in C++ to end the framework.
