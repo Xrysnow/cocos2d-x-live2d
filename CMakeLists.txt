@@ -68,12 +68,28 @@ target_include_directories(${LIB_NAME}
   PRIVATE
     ${SRC_DIR}/Rendering
     Core/include
+)
+
+set(INCLUDES
     ${COCOS2DX_ROOT_PATH}/cocos
     ${COCOS2DX_ROOT_PATH}/cocos/base
     ${COCOS2DX_ROOT_PATH}/cocos/platform
+    ${COCOS2DX_ROOT_PATH}/extensions
     ${COCOS2DX_ROOT_PATH}/external
     ${COCOS2DX_ROOT_PATH}/external/glfw3/include/win32
+    ${COCOS2DX_ROOT_PATH}/external/glfw/include/GLFW
+    ${COCOS2DX_ROOT_PATH}/external/win32-specific/gles/include/OGLES
 )
+if(BUILD_LUA_LIBS)
+    list(APPEND INCLUDES
+        ${COCOS2DX_ROOT_PATH}/external/lua/luajit/include
+        ${COCOS2DX_ROOT_PATH}/external/lua/tolua)
+endif()
+foreach(dir ${INCLUDES})
+    if(EXISTS ${dir})
+        include_directories(${dir})
+    endif()
+endforeach()
 
 if(BUILD_LUA_LIBS)
   target_compile_definitions(${LIB_NAME} PUBLIC _USRLUASTATIC)
@@ -81,18 +97,6 @@ if(BUILD_LUA_LIBS)
     PRIVATE
       lua_live2d_auto.cpp
       lua_live2d_auto.hpp
-  )
-  target_include_directories(${LIB_NAME}
-    PRIVATE
-      ${COCOS2DX_ROOT_PATH}/external/lua/luajit/include
-      ${COCOS2DX_ROOT_PATH}/external/lua/tolua
-  )
-endif()
-
-if(WINDOWS)
-  target_include_directories(${LIB_NAME}
-    PRIVATE
-      ${COCOS2DX_ROOT_PATH}/external/win32-specific/gles/include/OGLES
   )
 endif()
 
