@@ -12,7 +12,7 @@ namespace l2d
 	{
 	protected:
 		Model();
-		virtual ~Model();
+		~Model() override;
 		bool _init(const std::string& dir, const std::string& fileName);
 		void loadModelInfo();
 	public:
@@ -154,8 +154,6 @@ namespace l2d
 		cocos2d::Mat4 constTransform;
 		Csm::CubismMatrix44 viewForDraw;
 		std::unordered_map<std::string, cocos2d::Rect> hitBoxes;
-		cocos2d::CallbackCommand drawCommandBefore;
-		cocos2d::CallbackCommand drawCommandAfter;
 		bool enableDebugRect = false;
 		cocos2d::DrawNode* debugRenderer = nullptr;
 		bool autoDragging = false;
