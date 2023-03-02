@@ -709,7 +709,7 @@ enum ShaderNames
 
 void CubismShader_CC::ReleaseShaderProgram()
 {
-	std::set<Program*> programs;
+	std::set<backend::Program*> programs;
 	for (csmUint32 i = 0; i < _shaderSets.GetSize(); i++)
 	{
 		if (_shaderSets[i]->ShaderProgram)
@@ -1698,12 +1698,14 @@ void CubismShader_CC::SetupShaderProgram(CubismRenderer_CC* renderer
 		//テクスチャ設定
 		state->setTexture(shaderSet->SamplerTexture0Location, 0, texture->getBackendTexture());
 
+#ifndef CC_VERSION
 		// 頂点配列の設定
 		state->getVertexLayout()->setAttribute(AttributePositionName, shaderSet->AttributePositionLocation,
 			VertexFormat::FLOAT2, 0, false);
 		// テクスチャ頂点の設定
 		state->getVertexLayout()->setAttribute(AttributeTexCoordName, shaderSet->AttributeTexCoordLocation,
 			VertexFormat::FLOAT2, sizeof(float) * 2, false);
+#endif // !CC_VERSION
 
 		// チャンネル
 		const auto channelNo = renderer->GetClippingContextBufferForMask()->_layoutChannelNo;
@@ -1777,12 +1779,14 @@ void CubismShader_CC::SetupShaderProgram(CubismRenderer_CC* renderer
 		if (!state)
 			state = new ProgramState(shaderSet->ShaderProgram);
 
+#ifndef CC_VERSION
 		// 頂点配列の設定
 		state->getVertexLayout()->setAttribute(AttributePositionName, shaderSet->AttributePositionLocation,
 			VertexFormat::FLOAT2, 0, false);
 		// テクスチャ頂点の設定
 		state->getVertexLayout()->setAttribute(AttributeTexCoordName, shaderSet->AttributeTexCoordLocation,
 			VertexFormat::FLOAT2, sizeof(float) * 2, false);
+#endif // !CC_VERSION
 
 		if (masked)
 		{
@@ -1828,8 +1832,9 @@ void CubismShader_CC::SetupShaderProgram(CubismRenderer_CC* renderer
 			state->setUniform(shaderSet->UniformScreenColorLocation, &screen, sizeof(float) * 4);
 		}
 	}
-
+#ifndef CC_VERSION
 	state->getVertexLayout()->setLayout(sizeof(csmFloat32) * 4);
+#endif // !CC_VERSION
 	desc->programState = state;
 	auto& blend = desc->blendDescriptor;
 	blend.blendEnabled = true;
@@ -1839,7 +1844,7 @@ void CubismShader_CC::SetupShaderProgram(CubismRenderer_CC* renderer
 	blend.destinationAlphaBlendFactor = DST_ALPHA;
 }
 
-Program* CubismShader_CC::LoadShaderProgram(const std::string& vertShaderSrc, const std::string& fragShaderSrc)
+backend::Program* CubismShader_CC::LoadShaderProgram(const std::string& vertShaderSrc, const std::string& fragShaderSrc)
 {
 	return backend::Device::getInstance()->newProgram(vertShaderSrc, fragShaderSrc);
 }
@@ -2277,11 +2282,17 @@ void CubismRenderer_CC::SetCullMode(backend::CullMode value)
 
 void CubismRenderer_CC::AddCallBack(const std::function<void()>& callback)
 {
+#ifdef CC_VERSION
+	auto cmd = ccr->nextCallbackCommand();
+	cmd->func = callback;
+	ccr->addCommand(cmd);
+#else
 	auto cmd = std::make_shared<CallbackCommand>();
 	cmds.push_back(cmd);
 	cmd->init(0.f);
 	cmd->func = callback;
 	ccr->addCommand(cmd.get());
+#endif // CC_VERSION
 }
 
 void CubismRenderer_CC::ClearCommands()

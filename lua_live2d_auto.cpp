@@ -1194,7 +1194,7 @@ int lua_register_L2D_Model(lua_State* tolua_S)
 		tolua_function(tolua_S, "startRandomMotion", lua_L2D_Model_startRandomMotion);
 		tolua_function(tolua_S, "create", lua_L2D_Model_create);
 	tolua_endmodule(tolua_S);
-	std::string typeName = typeid(l2d::Model).name();
+	const auto typeName = reinterpret_cast<decltype(g_luaType)::key_type>(typeid(l2d::Model).name());
 	g_luaType[typeName] = "l2d.Model";
 	g_typeCast["Model"] = "l2d.Model";
 	return 1;

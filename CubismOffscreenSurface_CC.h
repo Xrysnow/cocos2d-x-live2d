@@ -36,11 +36,15 @@ namespace Live2D { namespace Cubism { namespace Framework { namespace Rendering 
 	private:
 		CubismRenderer_CC* _renderer = nullptr;
 		cocos2d::Renderer* ccr = nullptr;
+#ifdef CC_VERSION
+		cocos2d::backend::RenderTarget* _oldRenderTarget = nullptr;
+		cocos2d::backend::RenderTarget* _renderTarget = nullptr;
+#else
 		cocos2d::Texture2D* _oldColorAttachment = nullptr;
 		cocos2d::Texture2D* _oldDepthAttachment = nullptr;
 		cocos2d::Texture2D* _oldStencilAttachment = nullptr;
-		cocos2d::RenderTargetFlag _renderTargetFlags;
-		cocos2d::RenderTargetFlag _oldRenderTargetFlag;
+		cocos2d::RenderTargetFlag _oldRenderTargetFlag = {};
+#endif // CC_VERSION
 
 		cocos2d::RenderTexture*  _renderTexture = nullptr;         ///< レンダリングターゲットとしてのアドレス
 		cocos2d::Texture2D*      _colorBuffer = nullptr;           ///< 描画の際使用するテクスチャとしてのアドレス
