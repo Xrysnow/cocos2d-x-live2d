@@ -1,0 +1,5 @@
+# Local Cubism Core SDK (headers, binaries and documentation).
+# Keep the repository-provided build configuration and placeholder.
+/Core/*
+!/Core/CMakeLists.txt
+!/Core/copy files here
