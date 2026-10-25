@@ -63,19 +63,58 @@ elseif(WINDOWS)
   endif()
 elseif(APPLE)
   if(IOS)
-    # iPhone Simulator (i386) is not support on Cubism Core.
-    if(IOS_PLATFORM STREQUAL "SIMULATOR")
-      message(FATAL_ERROR
-        "Cubism Core does not support i386 iOS architecture."
-      )
+    # CMake accepts either an SDK name or a full path to a versioned .sdk.
+    get_filename_component(CORE_IOS_SYSROOT "${CMAKE_OSX_SYSROOT}" NAME)
+    string(TOLOWER "${CORE_IOS_SYSROOT}" CORE_IOS_SYSROOT)
+    if(CORE_IOS_SYSROOT MATCHES "^iphonesimulator([0-9.]+)?(\\.sdk)?$")
+      set(CORE_IOS_SDK iphonesimulator)
+      set(CORE_IOS_ARCH x86_64)
+    elseif(CORE_IOS_SYSROOT MATCHES "^iphoneos([0-9.]+)?(\\.sdk)?$")
+      set(CORE_IOS_SDK iphoneos)
+      set(CORE_IOS_ARCH arm64)
+    else()
+      message(FATAL_ERROR "Cubism Core requires an iOS SDK: set CMAKE_OSX_SYSROOT "
+        "to iphoneos, iphonesimulator or the corresponding .sdk path; "
+        "got '${CMAKE_OSX_SYSROOT}'.")
     endif()
+
+    # The bundled Core has arm64 device and x86_64 simulator archives only.
+    # A single imported archive cannot serve both SDKs in a combined build.
+    if(CMAKE_IOS_INSTALL_COMBINED)
+      message(FATAL_ERROR "Cubism Core does not support combined device/simulator "
+        "builds. Configure each iOS SDK in a separate build directory.")
+    endif()
+    if(CORE_IOS_SDK STREQUAL "iphonesimulator" AND NOT CMAKE_OSX_ARCHITECTURES)
+      message(FATAL_ERROR "Bundled Cubism Core for iphonesimulator supports only "
+        "x86_64. Set CMAKE_OSX_ARCHITECTURES=x86_64 explicitly; the SDK's default "
+        "architecture may be unsupported (arm64).")
+    endif()
+    foreach(CORE_IOS_REQUESTED_ARCH IN LISTS CMAKE_OSX_ARCHITECTURES)
+      if(NOT CORE_IOS_REQUESTED_ARCH STREQUAL CORE_IOS_ARCH)
+        message(FATAL_ERROR "Bundled Cubism Core for ${CORE_IOS_SDK} supports only "
+          "${CORE_IOS_ARCH}; requested '${CORE_IOS_REQUESTED_ARCH}' in "
+          "CMAKE_OSX_ARCHITECTURES. A matching Core binary is required.")
+      endif()
+    endforeach()
+    foreach(CORE_IOS_CONFIG Debug Release)
+      set(CORE_IOS_LIBRARY "${CORE_PATH}/lib/ios/${CORE_IOS_CONFIG}-${CORE_IOS_SDK}/libLive2DCubismCore.a")
+      if(NOT EXISTS "${CORE_IOS_LIBRARY}")
+        message(FATAL_ERROR "Missing Cubism Core ${CORE_IOS_CONFIG} library: ${CORE_IOS_LIBRARY}")
+      endif()
+    endforeach()
 
     set_target_properties(Live2DCubismCore
       PROPERTIES
+        IMPORTED_CONFIGURATIONS "DEBUG;RELEASE"
+        IMPORTED_LOCATION
+          "${CORE_PATH}/lib/ios/Release-${CORE_IOS_SDK}/libLive2DCubismCore.a"
         IMPORTED_LOCATION_DEBUG
-          ${CORE_PATH}/lib/ios/Debug-iphoneos/libLive2DCubismCore.a
+          "${CORE_PATH}/lib/ios/Debug-${CORE_IOS_SDK}/libLive2DCubismCore.a"
         IMPORTED_LOCATION_RELEASE
-          ${CORE_PATH}/lib/ios/Release-iphoneos/libLive2DCubismCore.a
+          "${CORE_PATH}/lib/ios/Release-${CORE_IOS_SDK}/libLive2DCubismCore.a"
+        MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release
+        MAP_IMPORTED_CONFIG_MINSIZEREL Release
+        MAP_IMPORTED_CONFIG_NOCONFIG Release
     )
   elseif(MACOSX)
     set_target_properties(Live2DCubismCore
