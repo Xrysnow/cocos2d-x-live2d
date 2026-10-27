@@ -117,10 +117,54 @@ elseif(APPLE)
         MAP_IMPORTED_CONFIG_NOCONFIG Release
     )
   elseif(MACOSX)
+    # Respect explicit cross/universal builds; otherwise use CMake's target CPU.
+    set(CORE_MACOS_ARCHITECTURES "${CMAKE_OSX_ARCHITECTURES}")
+    if(NOT CORE_MACOS_ARCHITECTURES)
+      set(CORE_MACOS_ARCHITECTURES "${CMAKE_SYSTEM_PROCESSOR}")
+    endif()
+    if(NOT CORE_MACOS_ARCHITECTURES)
+      message(FATAL_ERROR "Cannot determine the macOS architecture for Cubism Core. "
+        "Set CMAKE_OSX_ARCHITECTURES to x86_64, arm64 or x86_64;arm64.")
+    endif()
+    list(REMOVE_DUPLICATES CORE_MACOS_ARCHITECTURES)
+    set(CORE_MACOS_LIBRARIES)
+    foreach(CORE_MACOS_ARCH IN LISTS CORE_MACOS_ARCHITECTURES)
+      if(NOT CORE_MACOS_ARCH STREQUAL "x86_64" AND NOT CORE_MACOS_ARCH STREQUAL "arm64")
+        message(FATAL_ERROR "Bundled Cubism Core for macOS supports only x86_64 and arm64; "
+          "requested '${CORE_MACOS_ARCH}'. Set CMAKE_OSX_ARCHITECTURES explicitly.")
+      endif()
+      set(CORE_MACOS_LIBRARY "${CORE_PATH}/lib/macos/${CORE_MACOS_ARCH}/libLive2DCubismCore.a")
+      if(NOT EXISTS "${CORE_MACOS_LIBRARY}")
+        message(FATAL_ERROR "Missing Cubism Core macOS ${CORE_MACOS_ARCH} library: ${CORE_MACOS_LIBRARY}")
+      endif()
+      list(APPEND CORE_MACOS_LIBRARIES "${CORE_MACOS_LIBRARY}")
+    endforeach()
+
+    list(LENGTH CORE_MACOS_ARCHITECTURES CORE_MACOS_ARCH_COUNT)
+    if(CORE_MACOS_ARCH_COUNT GREATER 1)
+      # Keep the supplied thin archives intact; generate the universal library in the build tree.
+      if(CMAKE_LIPO)
+        set(CORE_MACOS_LIPO "${CMAKE_LIPO}")
+      else()
+        find_program(CORE_MACOS_LIPO NAMES lipo)
+      endif()
+      if(NOT CORE_MACOS_LIPO)
+        message(FATAL_ERROR "A macOS universal Cubism Core build requires lipo. Set CMAKE_LIPO to its path.")
+      endif()
+      set(CORE_MACOS_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/macos/universal/libLive2DCubismCore.a")
+      add_custom_command(OUTPUT "${CORE_MACOS_LIBRARY}"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/macos/universal"
+        COMMAND "${CORE_MACOS_LIPO}" -create ${CORE_MACOS_LIBRARIES} -output "${CORE_MACOS_LIBRARY}"
+        DEPENDS ${CORE_MACOS_LIBRARIES}
+        COMMENT "Combining macOS Cubism Core architectures"
+        VERBATIM
+      )
+      add_custom_target(Live2DCubismCore_universal DEPENDS "${CORE_MACOS_LIBRARY}")
+      add_dependencies(Live2DCubismCore Live2DCubismCore_universal)
+    endif()
     set_target_properties(Live2DCubismCore
       PROPERTIES
-        IMPORTED_LOCATION
-          ${CORE_PATH}/lib/macos/libLive2DCubismCore.a
+        IMPORTED_LOCATION "${CORE_MACOS_LIBRARY}"
     )
   endif()
 endif()
